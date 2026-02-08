@@ -33,7 +33,23 @@ class UserRegistrationForm(UserCreationForm):
         widgets = {
             'username': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Choose a username'
+                'placeholder': 'Choose a username',
+                'autocomplete': 'off'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter your email',
+                'autocomplete': 'off'
+            }),
+            'first_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'First name (optional)',
+                'autocomplete': 'off'
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Last name (optional)',
+                'autocomplete': 'off'
             }),
         }
 
@@ -59,12 +75,16 @@ class UserLoginForm(forms.Form):
     username = forms.CharField(
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Enter your username'
+            'placeholder': 'Enter your username',
+            'autocomplete': 'username',
+            'data-form-type': 'login'
         })
     )
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Enter your password'
+            'placeholder': 'Enter your password',
+            'autocomplete': 'current-password',
+            'data-form-type': 'login'
         })
     )

@@ -73,19 +73,24 @@ WSGI_APPLICATION = 'task_delay_system.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-# MySQL Configuration
+# SQLite (works without MySQL server - use when MySQL is not running)
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+# MySQL (uncomment when MySQL server is running and you have created task_management_db)
 DATABASES = {
     'default': {
-        # Using MySQL Connector/Python backend (works on Windows without compiling mysqlclient)
         'ENGINE': 'mysql.connector.django',
-        'NAME': 'task_management_db',  # Your database name
-        'USER': 'root',  # Your MySQL username (usually 'root')
-        'PASSWORD': 'tiger',  # Your MySQL password (leave empty if no password)
-        'HOST': 'localhost',  # Usually 'localhost' or '127.0.0.1'
-        'PORT': '3306',  # Default MySQL port
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-        },
+        'NAME': 'task_management_db',
+        'USER': 'root',
+        'PASSWORD': 'tiger',
+        'HOST': 'localhost',
+        'PORT': '3306',
+        'OPTIONS': {'charset': 'utf8mb4'},
     }
 }
 

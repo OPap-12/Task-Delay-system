@@ -8,7 +8,7 @@ def register_view(request):
     """User registration view"""
     if request.user.is_authenticated:
         return redirect('task_list')
-    
+
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
@@ -20,14 +20,19 @@ def register_view(request):
             messages.error(request, 'Please correct the errors below.')
     else:
         form = UserRegistrationForm()
-    
-    return render(request, 'tasks/register.html', {'form': form})
+
+    # Add cache control headers to prevent form autofill persistence
+    response = render(request, 'tasks/register.html', {'form': form})
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
 
 def login_view(request):
     """User login view"""
     if request.user.is_authenticated:
         return redirect('task_list')
-    
+
     if request.method == 'POST':
         form = UserLoginForm(request.POST)
         if form.is_valid():
@@ -45,13 +50,23 @@ def login_view(request):
             messages.error(request, 'Please correct the errors below.')
     else:
         form = UserLoginForm()
-    
-    return render(request, 'tasks/login.html', {'form': form})
+
+    # Add cache control headers to prevent form autofill persistence
+    response = render(request, 'tasks/login.html', {'form': form})
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
 
 @login_required
 def logout_view(request):
     """User logout view"""
     from django.contrib.auth import logout
     logout(request)
+    # Clear any cached form data by redirecting with cache control
+    response = redirect('login')
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
     messages.info(request, 'You have been logged out successfully.')
-    return redirect('login')
+    return response

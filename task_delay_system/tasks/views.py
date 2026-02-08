@@ -9,21 +9,29 @@ from .forms import TaskForm
 def task_list(request):
     """Display all tasks with filtering options"""
     tasks = Task.objects.filter(user=request.user).order_by('-created_at')
-    
+
     # Filter by status if requested
     status_filter = request.GET.get('status', '')
     if status_filter == 'completed':
         tasks = tasks.filter(completed=True)
     elif status_filter == 'pending':
         tasks = tasks.filter(completed=False)
-    
-    # Filter by delay status
+
+    # Filter by delay status using database queries
     delay_filter = request.GET.get('delay', '')
     if delay_filter == 'delayed':
-        tasks = [task for task in tasks if task.is_delayed()]
+        # Tasks that are overdue (not completed and past due date)
+        tasks = tasks.filter(completed=False, due_date__lt=timezone.now().date())
     elif delay_filter == 'at_risk':
-        tasks = [task for task in tasks if task.is_at_risk()]
-    
+        # Tasks due within 2 days and not completed
+        from datetime import timedelta
+        two_days_from_now = timezone.now().date() + timedelta(days=2)
+        tasks = tasks.filter(
+            completed=False,
+            due_date__lte=two_days_from_now,
+            due_date__gte=timezone.now().date()
+        )
+
     context = {
         'tasks': tasks,
         'status_filter': status_filter,

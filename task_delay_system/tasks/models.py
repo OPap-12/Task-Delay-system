@@ -3,6 +3,22 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from datetime import timedelta
 
+# Constants for risk calculations
+HIGH_RISK_THRESHOLD = 70
+MODERATE_RISK_THRESHOLD = 40
+OVERDUE_RISK = 100
+TODAY_RISK = 90
+TOMORROW_RISK = 80
+DAY_AFTER_RISK = 70
+WEEK_RISK = 50
+DEFAULT_RISK = 20
+
+PRIORITY_ADJUSTMENTS = {
+    'high': 10,
+    'medium': 0,
+    'low': -10
+}
+
 class Task(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks')
     title = models.CharField(max_length=200)
@@ -101,32 +117,26 @@ class Task(models.Model):
         """
         if self.completed:
             return 0
-        
+
         days_left = self.days_until_due()
         base_score = 0
-        
-        # Days-based risk
+
+        # Days-based risk using constants
         if days_left < 0:
-            base_score = 100  # Overdue
+            base_score = OVERDUE_RISK  # Overdue
         elif days_left == 0:
-            base_score = 90
+            base_score = TODAY_RISK
         elif days_left == 1:
-            base_score = 80
+            base_score = TOMORROW_RISK
         elif days_left == 2:
-            base_score = 70
+            base_score = DAY_AFTER_RISK
         elif days_left <= 7:
-            base_score = 50
+            base_score = WEEK_RISK
         else:
-            base_score = 20
-        
-        # Priority adjustment
-        priority_adjustment = {
-            'high': 10,
-            'medium': 0,
-            'low': -10
-        }
-        
-        final_score = base_score + priority_adjustment.get(self.priority, 0)
+            base_score = DEFAULT_RISK
+
+        # Priority adjustment using constants
+        final_score = base_score + PRIORITY_ADJUSTMENTS.get(self.priority, 0)
         return max(0, min(100, final_score))  # Clamp between 0-100
 
     def get_status(self):

@@ -1,4 +1,2 @@
-Django==6.0.1
-# For MySQL support, uncomment one of the following:
-# mysqlclient  # Recommended, but may require compilation on Windows
-# pymysql  # Alternative, easier to install on Windows
+Django>=6.0
+mysql-connector-python>=9.0
