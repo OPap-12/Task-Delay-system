@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Management System</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'tasks/css/style.css' %}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>📋 Task Management System</h1>
+                <p style="color: #666; margin-top: 5px;">Welcome, {{ user.username }}!</p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <a href="{% url 'dashboard' %}" class="btn btn-info">📊 Dashboard</a>
+                <a href="{% url 'create_task' %}" class="btn btn-primary">+ Add New Task</a>
+                <a href="{% url 'logout' %}" class="btn btn-secondary">Logout</a>
+            </div>
+        </header>
+
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="filters">
+            <h3>Filter Tasks:</h3>
+            <div class="filter-buttons">
+                <a href="{% url 'task_list' %}" class="btn {% if not status_filter and not delay_filter %}btn-active{% else %}btn-secondary{% endif %}">All</a>
+                <a href="?status=pending" class="btn {% if status_filter == 'pending' %}btn-active{% else %}btn-secondary{% endif %}">Pending</a>
+                <a href="?status=completed" class="btn {% if status_filter == 'completed' %}btn-active{% else %}btn-secondary{% endif %}">Completed</a>
+                <a href="?delay=at_risk" class="btn {% if delay_filter == 'at_risk' %}btn-active{% else %}btn-secondary{% endif %}">At Risk</a>
+                <a href="?delay=delayed" class="btn {% if delay_filter == 'delayed' %}btn-active{% else %}btn-secondary{% endif %}">Delayed</a>
+            </div>
+        </div>
+
+        <div class="task-list">
+            {% if tasks %}
+                {% for task in tasks %}
+                    <div class="task-card {% if task.completed %}completed{% endif %} {% if task.is_delayed %}delayed{% endif %} {% if task.is_at_risk %}at-risk{% endif %}">
+                        <div class="task-header">
+                            <h3>{{ task.title }}</h3>
+                            <div class="task-status">
+                                <span class="badge {% if task.priority == 'high' %}badge-danger{% elif task.priority == 'medium' %}badge-warning{% else %}badge-info{% endif %}">
+                                    {{ task.get_priority_display }}
+                                </span>
+                                {% if task.completed %}
+                                    <span class="badge badge-success">✓ Completed</span>
+                                    {% if task.is_delayed %}
+                                        <span class="badge badge-danger">⚠ Delayed</span>
+                                    {% else %}
+                                        <span class="badge badge-info">✓ On Time</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge badge-warning">⏳ Pending</span>
+                                    {% if task.is_at_risk %}
+                                        <span class="badge badge-danger">⚠ At Risk</span>
+                                    {% endif %}
+                                    <span class="badge" style="background-color: {% if task.risk_score >= 70 %}#dc3545{% elif task.risk_score >= 40 %}#ffc107{% else %}#28a745{% endif %}; color: white;">
+                                        Risk: {{ task.risk_score }}%
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if task.description %}
+                            <p class="task-description">{{ task.description }}</p>
+                        {% endif %}
+                        
+                        <div class="task-meta">
+                            <div class="meta-item">
+                                <strong>Due Date:</strong> 
+                                <span class="{% if task.is_delayed or task.is_at_risk %}text-danger{% endif %}">
+                                    {{ task.due_date|date:"F d, Y" }}
+                                </span>
+                            </div>
+                            <div class="meta-item">
+                                <strong>Priority:</strong> 
+                                <span style="text-transform: capitalize; font-weight: 600;">{{ task.get_priority_display }}</span>
+                            </div>
+                            <div class="meta-item">
+                                <strong>Created:</strong> {{ task.created_at|date:"F d, Y" }}
+                            </div>
+                            {% if not task.completed %}
+                            <div class="meta-item">
+                                <strong>Days Left:</strong> 
+                                <span class="{% if task.days_until_due < 0 %}text-danger{% elif task.days_until_due <= 2 %}text-danger{% else %}{% endif %}">
+                                    {{ task.days_until_due }} day{{ task.days_until_due|pluralize }}
+                                </span>
+                            </div>
+                            {% endif %}
+                            {% if task.completed_at %}
+                                <div class="meta-item">
+                                    <strong>Completed:</strong> {{ task.completed_at|date:"F d, Y" }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="task-actions">
+                            {% if not task.completed %}
+                                <a href="{% url 'toggle_task' task.id %}" class="btn btn-success btn-sm">Mark Complete</a>
+                            {% else %}
+                                <a href="{% url 'toggle_task' task.id %}" class="btn btn-secondary btn-sm">Mark Pending</a>
+                            {% endif %}
+                            <a href="{% url 'update_task' task.id %}" class="btn btn-info btn-sm">Edit</a>
+                            <a href="{% url 'delete_task' task.id %}" class="btn btn-danger btn-sm">Delete</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <p>No tasks found. <a href="{% url 'create_task' %}">Create your first task!</a></p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Task Management System</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'tasks/css/style.css' %}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>📊 Task Dashboard</h1>
+                <p style="color: #666; margin-top: 5px;">Analytics & Predictions for {{ user.username }}</p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <a href="{% url 'task_list' %}" class="btn btn-primary">📋 All Tasks</a>
+                <a href="{% url 'create_task' %}" class="btn btn-success">+ Add Task</a>
+                <a href="{% url 'logout' %}" class="btn btn-secondary">Logout</a>
+            </div>
+        </header>
+
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Statistics Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+            <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px;">
+                <h3 style="margin: 0; font-size: 2em;">{{ total_tasks }}</h3>
+                <p style="margin: 5px 0 0 0;">Total Tasks</p>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 20px; border-radius: 8px;">
+                <h3 style="margin: 0; font-size: 2em;">{{ completed_tasks }}</h3>
+                <p style="margin: 5px 0 0 0;">Completed</p>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); color: white; padding: 20px; border-radius: 8px;">
+                <h3 style="margin: 0; font-size: 2em;">{{ pending_tasks }}</h3>
+                <p style="margin: 5px 0 0 0;">Pending</p>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; padding: 20px; border-radius: 8px;">
+                <h3 style="margin: 0; font-size: 2em;">{{ delayed_tasks|length }}</h3>
+                <p style="margin: 5px 0 0 0;">Delayed</p>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); color: white; padding: 20px; border-radius: 8px;">
+                <h3 style="margin: 0; font-size: 2em;">{{ completion_rate }}%</h3>
+                <p style="margin: 5px 0 0 0;">Completion Rate</p>
+            </div>
+        </div>
+
+        <!-- Risk Analysis -->
+        <div style="margin-bottom: 30px;">
+            <h2>⚠️ High Risk Tasks (Risk Score ≥ 70%)</h2>
+            {% if high_risk_tasks %}
+                <div class="task-list">
+                    {% for task in high_risk_tasks %}
+                        <div class="task-card at-risk">
+                            <div class="task-header">
+                                <h3>{{ task.title }}</h3>
+                                <div class="task-status">
+                                    <span class="badge badge-danger">Risk: {{ task.risk_score }}%</span>
+                                    <span class="badge badge-warning">{{ task.get_priority_display }} Priority</span>
+                                </div>
+                            </div>
+                            <div class="task-meta">
+                                <div class="meta-item">
+                                    <strong>Due Date:</strong> {{ task.due_date|date:"F d, Y" }}
+                                </div>
+                                <div class="meta-item">
+                                    <strong>Days Left:</strong> {{ task.days_until_due }} day{{ task.days_until_due|pluralize }}
+                                </div>
+                                <div class="meta-item">
+                                    <strong>Delay Probability:</strong> {{ task.delay_prediction|floatformat:0 }}%
+                                </div>
+                                <div class="meta-item">
+                                    <strong>Completion Probability:</strong> {{ task.completion_probability|floatformat:0 }}%
+                                </div>
+                            </div>
+                            <div class="task-actions">
+                                <a href="{% url 'update_task' task.id %}" class="btn btn-info btn-sm">Edit</a>
+                                <a href="{% url 'toggle_task' task.id %}" class="btn btn-success btn-sm">Mark Complete</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="color: #28a745; padding: 20px; background: #d4edda; border-radius: 8px;">
+                    ✅ Great! No high-risk tasks at the moment.
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- At Risk Tasks -->
+        <div style="margin-bottom: 30px;">
+            <h2>⏰ Tasks At Risk (Due within 2 days)</h2>
+            {% if at_risk_tasks %}
+                <div class="task-list">
+                    {% for task in at_risk_tasks %}
+                        <div class="task-card at-risk">
+                            <div class="task-header">
+                                <h3>{{ task.title }}</h3>
+                                <div class="task-status">
+                                    <span class="badge badge-danger">⚠ At Risk</span>
+                                    <span class="badge" style="background-color: {% if task.risk_score >= 70 %}#dc3545{% elif task.risk_score >= 40 %}#ffc107{% else %}#28a745{% endif %}; color: white;">
+                                        Risk: {{ task.risk_score }}%
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="task-meta">
+                                <div class="meta-item">
+                                    <strong>Due Date:</strong> {{ task.due_date|date:"F d, Y" }}
+                                </div>
+                                <div class="meta-item">
+                                    <strong>Days Left:</strong> {{ task.days_until_due }} day{{ task.days_until_due|pluralize }}
+                                </div>
+                            </div>
+                            <div class="task-actions">
+                                <a href="{% url 'update_task' task.id %}" class="btn btn-info btn-sm">Edit</a>
+                                <a href="{% url 'toggle_task' task.id %}" class="btn btn-success btn-sm">Mark Complete</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="color: #28a745; padding: 20px; background: #d4edda; border-radius: 8px;">
+                    ✅ No tasks at risk right now!
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- Recent Pending Tasks -->
+        <div>
+            <h2>📝 Recent Pending Tasks</h2>
+            {% if tasks %}
+                <div class="task-list">
+                    {% for task in tasks %}
+                        <div class="task-card">
+                            <div class="task-header">
+                                <h3>{{ task.title }}</h3>
+                                <div class="task-status">
+                                    <span class="badge {% if task.priority == 'high' %}badge-danger{% elif task.priority == 'medium' %}badge-warning{% else %}badge-info{% endif %}">
+                                        {{ task.get_priority_display }}
+                                    </span>
+                                    <span class="badge" style="background-color: {% if task.risk_score >= 70 %}#dc3545{% elif task.risk_score >= 40 %}#ffc107{% else %}#28a745{% endif %}; color: white;">
+                                        Risk: {{ task.risk_score }}%
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="task-meta">
+                                <div class="meta-item">
+                                    <strong>Due Date:</strong> {{ task.due_date|date:"F d, Y" }}
+                                </div>
+                                <div class="meta-item">
+                                    <strong>Days Left:</strong> {{ task.days_until_due }} day{{ task.days_until_due|pluralize }}
+                                </div>
+                            </div>
+                            <div class="task-actions">
+                                <a href="{% url 'update_task' task.id %}" class="btn btn-info btn-sm">Edit</a>
+                                <a href="{% url 'toggle_task' task.id %}" class="btn btn-success btn-sm">Mark Complete</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="color: #6c757d; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                    No pending tasks. <a href="{% url 'create_task' %}">Create your first task!</a>
+                </p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
