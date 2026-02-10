@@ -1,1 +1,1 @@
-web: gunicorn --pythonpath . task_delay_system.task_delay_system.wsgi:application
+web: gunicorn task_delay_system.wsgi:application

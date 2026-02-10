@@ -8,7 +8,8 @@
 ---
 
 ## 🚀 Quick Deploy (Render Blueprint)
-This repo includes a `render.yaml` at the repository root. You can deploy with **Render Blueprint**:
+This repo includes a `render.yaml` at the repository root. It sets `rootDir: task_delay_system` to run the Django app from the correct folder.
+You can deploy with **Render Blueprint**:
 
 1. Open Render → **New** → **Blueprint**
 2. Select this repo
@@ -48,9 +49,9 @@ If using a database, set one of:
 These are already in `render.yaml` and assume `requirements.txt` is at the repository root:
 
 ```bash
-pip install -r requirements.txt
-python task_delay_system/manage.py collectstatic --noinput
-gunicorn --chdir task_delay_system task_delay_system.wsgi:application
+pip install -r ../requirements.txt
+python manage.py collectstatic --noinput
+gunicorn task_delay_system.wsgi:application
 ```
 
 ---
@@ -60,8 +61,8 @@ gunicorn --chdir task_delay_system task_delay_system.wsgi:application
 After deployment, open a Render shell and run:
 
 ```bash
-python task_delay_system/manage.py migrate
-python task_delay_system/manage.py createsuperuser
+python manage.py migrate
+python manage.py createsuperuser
 ```
 
 ---
