@@ -45,7 +45,7 @@ If using a database, set one of:
 
 ## 🗂️ Build + Start Commands
 
-These are already in `render.yaml`:
+These are already in `render.yaml` and assume `requirements.txt` is at the repository root:
 
 ```bash
 pip install -r requirements.txt
