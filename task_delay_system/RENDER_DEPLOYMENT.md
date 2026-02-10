@@ -50,7 +50,7 @@ These are already in `render.yaml` and assume `requirements.txt` is at the repos
 ```bash
 pip install -r requirements.txt
 python task_delay_system/manage.py collectstatic --noinput
-gunicorn task_delay_system.task_delay_system.wsgi:application
+gunicorn --chdir task_delay_system task_delay_system.wsgi:application
 ```
 
 ---
