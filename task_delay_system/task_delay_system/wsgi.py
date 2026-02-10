@@ -13,7 +13,8 @@ from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
-    "task_delay_system.task_delay_system.settings")
+    "task_delay_system.settings"
+)
 
 
 application = get_wsgi_application()

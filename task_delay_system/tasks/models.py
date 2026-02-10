@@ -20,7 +20,7 @@ PRIORITY_ADJUSTMENTS = {
 }
 
 class Task(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     due_date = models.DateField()

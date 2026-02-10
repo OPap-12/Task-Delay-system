@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'task_delay_system.tasks.apps.TasksConfig',
+    'tasks.apps.TasksConfig',
 ]
 
 MIDDLEWARE = [
@@ -58,7 +58,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "task_delay_system.task_delay_system.urls"
+ROOT_URLCONF = "task_delay_system.urls"
 
 TEMPLATES = [
     {
@@ -75,7 +75,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "task_delay_system.task_delay_system.wsgi.application"
+WSGI_APPLICATION = "task_delay_system.wsgi.application"
 
 
 # Database
