@@ -1,4 +1,4 @@
-Django>=6.0
+Django>=4.2,<5.0
 dj-database-url>=2.1
 gunicorn>=22.0
 mysql-connector-python>=9.0

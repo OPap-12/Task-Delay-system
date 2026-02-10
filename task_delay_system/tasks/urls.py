@@ -25,3 +25,5 @@ urlpatterns = [
     path('complete/<int:task_id>/', complete_task, name='complete_task'),
     path('toggle/<int:task_id>/', toggle_task, name='toggle_task'),
 ]
+
+
