@@ -85,3 +85,25 @@ python manage.py runserver
 - Static files are served via **WhiteNoise**.
 - HTTPS headers and cookie security are enabled by default.
 - Debug errors are disabled in production.
+
+---
+
+## 🧰 Troubleshooting 500 Errors (Render)
+
+If you see a **500 server error** on `/admin/login/` or `/login/`, follow these steps to capture the traceback:
+
+1. In Render, open your service → **Logs**.
+2. Click **"View All"** and look for a Python traceback right after the 500 request.
+3. Copy the full traceback (it usually starts with `Traceback (most recent call last):`).
+
+### Temporary DEBUG step (to surface the error)
+If you still don’t see a traceback, temporarily set `DJANGO_DEBUG=True` in Render → Environment, redeploy, reproduce the error once, then turn it back **off**.
+
+### Common causes to check
+- **Migrations not applied**: run `python manage.py migrate`
+- **Missing secret key**: ensure `DJANGO_SECRET_KEY` is set
+- **Database not attached**: verify `DATABASE_URL` exists in Render env vars
+- **Static file issues**: ensure `collectstatic` runs successfully
+- **Superuser not created**: `python manage.py createsuperuser`
+
+Once you have the traceback, share it and I can pinpoint the exact fix.
