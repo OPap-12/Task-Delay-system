@@ -3,8 +3,8 @@ services:
     name: task-delay-system
     env: python
     plan: free
-    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
-    startCommand: "gunicorn task_delay_system.wsgi:application"
+    buildCommand: "pip install -r requirements.txt && python task_delay_system/manage.py collectstatic --noinput"
+    startCommand: "gunicorn task_delay_system.task_delay_system.wsgi:application"
     envVars:
       - key: DJANGO_SECRET_KEY
         generateValue: true

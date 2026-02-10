@@ -49,8 +49,8 @@ These are already in `render.yaml` and assume `requirements.txt` is at the repos
 
 ```bash
 pip install -r requirements.txt
-python manage.py collectstatic --noinput
-gunicorn task_delay_system.wsgi:application
+python task_delay_system/manage.py collectstatic --noinput
+gunicorn task_delay_system.task_delay_system.wsgi:application
 ```
 
 ---
@@ -60,8 +60,8 @@ gunicorn task_delay_system.wsgi:application
 After deployment, open a Render shell and run:
 
 ```bash
-python manage.py migrate
-python manage.py createsuperuser
+python task_delay_system/manage.py migrate
+python task_delay_system/manage.py createsuperuser
 ```
 
 ---
