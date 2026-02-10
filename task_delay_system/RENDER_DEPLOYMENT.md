@@ -8,7 +8,7 @@
 ---
 
 ## 🚀 Quick Deploy (Render Blueprint)
-This repo includes a `render.yaml`. You can deploy with **Render Blueprint**:
+This repo includes a `render.yaml` at the repository root. You can deploy with **Render Blueprint**:
 
 1. Open Render → **New** → **Blueprint**
 2. Select this repo
