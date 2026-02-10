@@ -1,1 +1,1 @@
-web: gunicorn task_delay_system.wsgi:application
+web: cd task_delay_system && gunicorn task_delay_system.wsgi:application
