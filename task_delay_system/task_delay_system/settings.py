@@ -28,6 +28,7 @@ SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() == "true"
 
 ALLOWED_HOSTS = [
+    "task-delay-system.onrender.com",
     host.strip()
     for host in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
     if host.strip()
@@ -150,6 +151,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 CSRF_TRUSTED_ORIGINS = [
+    "https://task-delay-system.onrender.com",
     origin.strip()
     for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
     if origin.strip()
@@ -164,7 +166,7 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv(
     "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", "True"
 ).lower() == "true"
 SECURE_HSTS_PRELOAD = os.getenv("DJANGO_SECURE_HSTS_PRELOAD", "True").lower() == "true"
-
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # Authentication settings
 LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/"
