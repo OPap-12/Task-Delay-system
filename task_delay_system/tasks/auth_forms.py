@@ -26,16 +26,9 @@ class UserRegistrationForm(UserCreationForm):
             'placeholder': 'Last name (optional)'
         })
     )
-    role = forms.ChoiceField(
-        choices=[('Employee', 'Employee Dashboard'), ('Manager', 'Manager Dashboard')],
-        initial='Employee',
-        widget=forms.RadioSelect(attrs={'class': 'role-radio-group'}),
-        help_text="Select your workspace role. Managers can oversee team tasks and approve work."
-    )
-
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'role', 'password1', 'password2']
+        fields = ['username', 'email', 'first_name', 'last_name']
         widgets = {
             'username': forms.TextInput(attrs={
                 'class': 'form-control',
