@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="TaskFlow — intelligent task management with risk scoring, delay prediction, and role-based workflows.">
+    <title>{% block title %}TaskFlow | Workspace{% endblock %}</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'tasks/css/modern_style.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="{% if not user.is_authenticated %}auth-page{% endif %}">
+
+    <!-- ══════ SIDEBAR ══════ -->
+    {% if user.is_authenticated %}
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2><span style="color: #60A5FA;">⚡</span> TaskFlow</h2>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-label">Overview</div>
+            <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" id="nav-dashboard">
+                <span class="icon">📊</span> Dashboard
+            </a>
+            <a href="{% url 'task_list' %}" class="nav-item {% if request.resolver_match.url_name == 'task_list' %}active{% endif %}" id="nav-tasks">
+                <span class="icon">📋</span> {% if user.is_manager %}All Tasks{% else %}My Tasks{% endif %}
+            </a>
+
+            {% if user.is_manager %}
+            <div class="nav-section-label">Management</div>
+            <a href="{% url 'review_queue' %}" class="nav-item {% if request.resolver_match.url_name == 'review_queue' %}active{% endif %}" id="nav-review">
+                <span class="icon">✅</span> Review Queue
+            </a>
+            <a href="{% url 'reports_view' %}" class="nav-item {% if request.resolver_match.url_name == 'reports_view' %}active{% endif %}" id="nav-reports">
+                <span class="icon">📈</span> Reports
+            </a>
+            {% if user.is_superuser %}
+            <a href="{% url 'department_list' %}" class="nav-item {% if 'department' in request.resolver_match.url_name or 'assign_employee' in request.resolver_match.url_name %}active{% endif %}" id="nav-departments">
+                <span class="icon">🏢</span> Departments
+            </a>
+            {% endif %}
+            {% else %}
+            <div class="nav-section-label">Actions</div>
+            <a href="{% url 'create_task' %}" class="nav-item {% if request.resolver_match.url_name == 'create_task' %}active{% endif %}" id="nav-create">
+                <span class="icon">✏️</span> New Task
+            </a>
+            {% endif %}
+
+            <div class="nav-section-label">Account</div>
+            <a href="{% url 'my_profile' %}" class="nav-item {% if request.resolver_match.url_name == 'my_profile' %}active{% endif %}" id="nav-profile">
+                <span class="icon">👤</span> My Profile
+            </a>
+        </nav>
+
+        <div class="user-profile" id="user-profile">
+            <div class="avatar">{{ user.first_name|default:user.username|make_list|first|upper }}</div>
+            <div class="user-info">
+                <h4>{{ user.first_name|default:user.username }}</h4>
+                {% if user.is_manager %}
+                    <span class="role-badge manager-badge">Manager</span>
+                {% else %}
+                    <span class="role-badge employee-badge">Employee</span>
+                {% endif %}
+            </div>
+        </div>
+    </aside>
+    {% endif %}
+
+    <!-- ══════ MAIN AREA ══════ -->
+    <main class="main-area">
+        {% if user.is_authenticated %}
+        <header class="top-header">
+            <button class="mobile-toggle" id="mobile-toggle" aria-label="Toggle sidebar" onclick="document.getElementById('sidebar').classList.toggle('open')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+
+            <!-- Breadcrumb / Page context -->
+            <nav style="flex-grow:1; padding-left:14px; display:flex; align-items:center; gap:8px;">
+                <h2 style="font-size:16px; font-weight:600; color:var(--clr-text-main); margin:0; letter-spacing:-0.2px;">
+                    {% if request.resolver_match.url_name == 'dashboard' %}Overview
+                    {% elif request.resolver_match.url_name == 'task_list' %}Task Directory
+                    {% elif request.resolver_match.url_name == 'create_task' %}New Task
+                    {% elif request.resolver_match.url_name == 'update_task' %}Edit Task
+                    {% elif request.resolver_match.url_name == 'delete_task' %}Delete Task
+                    {% elif request.resolver_match.url_name == 'my_profile' or request.resolver_match.url_name == 'user_profile' %}User Profile
+                    {% elif request.resolver_match.url_name == 'review_queue' %}Review Queue
+                    {% elif request.resolver_match.url_name == 'task_detail' %}Task Detail
+                    {% endif %}
+                </h2>
+            </nav>
+
+            <div class="actions">
+                <!-- Notification Bell -->
+                <div class="notification-bell empty" id="bell-container" onclick="toggleNotifications()" role="button" aria-label="Notifications">
+                    🔔
+                    <span class="bell-badge" id="notif-badge" style="display: none;">0</span>
+
+                    <div class="notification-dropdown" id="notif-dropdown" onclick="event.stopPropagation()">
+                        <div class="notif-header">Notifications</div>
+                        <div class="notif-body" id="notif-list">
+                            <div class="notif-item" style="text-align:center; color:var(--clr-text-faint); padding:24px 16px;">
+                                No new notifications
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sign Out (with confirmation) -->
+                <button type="button" class="btn btn-outline btn-sm" id="btn-signout" onclick="document.getElementById('logout-modal').style.display='flex'" style="color:var(--clr-text-muted); display:flex; align-items:center; gap:6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Sign Out
+                </button>
+            </div>
+        </header>
+        {% endif %}
+
+        <!-- Toast Container -->
+        <div id="toast-container" class="toast-container">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="toast {{ message.tags }} show">
+                        {% if 'success' in message.tags %}✓{% elif 'error' in message.tags %}✕{% elif 'warning' in message.tags %}⚠{% else %}ℹ{% endif %}
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- Page Content -->
+        <div class="content-wrapper">
+            {% block content %}{% endblock %}
+        </div>
+        <!-- Reject Modal -->
+        <div id="reject-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.6); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(2px);">
+            <div style="background:var(--clr-bg-card); border-radius:var(--radius-md); width:100%; max-width:440px; padding:24px; box-shadow:var(--shadow-xl); border:1px solid var(--clr-border);">
+                <div style="margin-bottom:20px;">
+                    <h3 style="font-size:16px; margin-bottom:6px;">Reject Task</h3>
+                    <p style="font-size:13px; color:var(--clr-text-muted);">Please provide a reason for rejecting this task. The assignee will see this context.</p>
+                </div>
+                <form method="post" id="reject-form">
+                    {% csrf_token %}
+                    <div class="form-group" style="margin-bottom:24px;">
+                        <textarea name="reason" class="form-control" rows="3" placeholder="Explain why the task was rejected and what needs to be fixed..." required></textarea>
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; gap:8px;">
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('reject-modal').style.display='none'">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Reject Task</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ══ Logout Confirmation Modal ══ -->
+        <div id="logout-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.55); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(2px);">
+            <div style="background:var(--clr-bg-card); border-radius:var(--radius-md); width:100%; max-width:420px; padding:32px; box-shadow:var(--shadow-xl); border:1px solid var(--clr-border); text-align:center; animation: slideDown 0.2s var(--ease-out);">
+                <div style="width:54px;height:54px;margin:0 auto 18px;border-radius:var(--radius-sm);background:var(--clr-danger-soft);display:flex;align-items:center;justify-content:center;font-size:26px;">
+                    🚪
+                </div>
+                <h3 style="font-size:18px; margin-bottom:8px; color:var(--clr-text-main);">Sign out of TaskFlow?</h3>
+                <p style="font-size:14px; color:var(--clr-text-muted); margin-bottom:28px; line-height:1.5;">Are you sure you want to sign out? You'll need to sign in again to access your workspace.</p>
+                <div style="display:flex; justify-content:center; gap:10px;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('logout-modal').style.display='none'" id="logout-cancel-btn">Cancel</button>
+                    <form method="post" action="{% url 'logout' %}" style="margin:0;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger" id="logout-confirm-btn">Sign Out</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    {% block extra_js %}{% endblock %}
+
+    <script>
+        function openRejectModal(url) {
+            const modal = document.getElementById('reject-modal');
+            const form = document.getElementById('reject-form');
+            form.action = url;
+            form.querySelector('textarea').value = '';
+            modal.style.display = 'flex';
+            setTimeout(() => form.querySelector('textarea').focus(), 50);
+        }
+    </script>
+
+    <script>
+        /* ══ Logout Modal — close on backdrop click or Escape key ══ */
+        (function() {
+            var logoutModal = document.getElementById('logout-modal');
+            if (!logoutModal) return;
+            logoutModal.addEventListener('click', function(e) {
+                if (e.target === logoutModal) logoutModal.style.display = 'none';
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && logoutModal.style.display === 'flex') {
+                    logoutModal.style.display = 'none';
+                }
+            });
+        })();
+    </script>
+
+    {% if user.is_authenticated %}
+    <script>
+        /* ══ WebSocket Notifications ══ */
+        const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        const wsUrl = protocol + window.location.host + '/ws/notifications/';
+        let notificationSocket;
+        function connectWebSocket() {
+            notificationSocket = new WebSocket(wsUrl);
+
+            notificationSocket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                showToast(data.message, data.type);
+                addDropdownAlert(data.title, data.message, data.type);
+                updateBell();
+            };
+
+            notificationSocket.onclose = function() {
+                console.warn('WebSocket disconnected. Reconnecting in 5s...');
+                setTimeout(connectWebSocket, 5000);
+            };
+        }
+        connectWebSocket();
+
+        /* ══ Toast System ══ */
+        function showToast(message, type) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+            toast.className = 'toast ' + (type || '') + ' show';
+            toast.textContent = icon + ' ' + message;
+            container.appendChild(toast);
+            setTimeout(function() {
+                toast.classList.remove('show');
+                toast.classList.add('hide');
+                setTimeout(function() { toast.remove(); }, 300);
+            }, 5000);
+        }
+
+        /* ══ Bell State ══ */
+        let notifCount = 0;
+        function updateBell() {
+            const badge = document.getElementById('notif-badge');
+            const bell = document.getElementById('bell-container');
+            notifCount++;
+            badge.innerText = notifCount > 9 ? '9+' : notifCount;
+            badge.style.display = 'flex';
+            badge.classList.add('pulse');
+            setTimeout(function() { badge.classList.remove('pulse'); }, 1200);
+            bell.classList.remove('empty');
+            bell.classList.add('has-notifs', 'ringing');
+            setTimeout(function() { bell.classList.remove('ringing'); }, 500);
+        }
+
+        function addDropdownAlert(title, message, type) {
+            const list = document.getElementById('notif-list');
+            if (notifCount === 1) list.innerHTML = '';
+            const item = document.createElement('div');
+            item.className = 'notif-item ' + (type || '');
+            const titleEl = document.createElement('strong');
+            titleEl.textContent = title;
+            item.appendChild(titleEl);
+            item.appendChild(document.createTextNode(' ' + message));
+            list.prepend(item);
+        }
+
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notif-dropdown');
+            const bell = document.getElementById('bell-container');
+            dropdown.classList.toggle('active');
+            if (dropdown.classList.contains('active')) {
+                notifCount = 0;
+                document.getElementById('notif-badge').style.display = 'none';
+                bell.classList.remove('has-notifs');
+                bell.classList.add('empty');
+            }
+        }
+
+        /* ══ Global Behaviors ══ */
+        // Close dropdown on outside click
+        document.addEventListener('click', function(e) {
+            var bell = document.getElementById('bell-container');
+            if (bell && !bell.contains(e.target)) {
+                document.getElementById('notif-dropdown').classList.remove('active');
+            }
+        });
+
+        // Auto-dismiss initial toasts
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.toast.show').forEach(function(t) {
+                setTimeout(function() {
+                    t.classList.remove('show');
+                    t.classList.add('hide');
+                    setTimeout(function() { t.remove(); }, 300);
+                }, 4000);
+            });
+        });
+
+        // Close sidebar on mobile when clicking main area
+        document.querySelector('.main-area').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.remove('open');
+        });
+    </script>
+    {% endif %}
+</body>
+</html>

@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}System Reports | TaskFlow{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 24px;">
+    <h2 style="font-size: 20px; font-weight: 600; color: var(--clr-text-main); margin: 0;">System Performance Reports</h2>
+    <p style="color: var(--clr-text-muted); font-size: 14px; margin-top: 4px;">High-level overview of task throughput and quality metrics.</p>
+</div>
+
+<!-- Global Summary Tiles -->
+<div class="stats-grid" style="margin-bottom: 32px;">
+    <div class="stat-card stat-success">
+        <div class="stat-header">
+            <span class="stat-icon">✅</span>
+            <span class="stat-label">Total Approvals</span>
+        </div>
+        <div class="stat-value">{{ total_approvals }}</div>
+        <p class="stat-meta">Lifetime tasks marked as complete</p>
+    </div>
+
+    <div class="stat-card stat-danger">
+        <div class="stat-header">
+            <span class="stat-icon">❌</span>
+            <span class="stat-label">Total Rejections</span>
+        </div>
+        <div class="stat-value">{{ total_rejections }}</div>
+        <p class="stat-meta">Tasks returned for rework</p>
+    </div>
+
+    <div class="stat-card stat-info">
+        <div class="stat-header">
+            <span class="stat-icon">📋</span>
+            <span class="stat-label">System Ratio</span>
+        </div>
+        <div class="stat-value">
+            {% if total_approvals or total_rejections %}
+                {{ total_approvals|add:total_rejections }}
+            {% else %}
+                0
+            {% endif %}
+        </div>
+        <p class="stat-meta">Total processed volume</p>
+    </div>
+</div>
+
+<!-- Department Breakdown -->
+<div class="section-block">
+    <div class="section-title">Department Performance Breakdown</div>
+    <div class="data-table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Department</th>
+                    <th>Manager</th>
+                    <th>Approvals</th>
+                    <th>Rejections</th>
+                    <th>Quality Rate</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dept in dept_metrics %}
+                <tr>
+                    <td><strong>{{ dept.name }}</strong></td>
+                    <td>{{ dept.manager.username|default:"Unassigned" }}</td>
+                    <td>
+                        <span class="badge status-approved">{{ dept.approvals }}</span>
+                    </td>
+                    <td>
+                        <span class="badge status-rejected">{{ dept.rejections }}</span>
+                    </td>
+                    <td>
+                        {% with total=dept.approvals|add:dept.rejections %}
+                            {% if total > 0 %}
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div class="stat-progress-bg" style="width: 60px; height: 6px;">
+                                        <div class="stat-progress-fill" style="width: {% widthratio dept.approvals total 100 %}%; background: var(--clr-success);"></div>
+                                    </div>
+                                    <span style="font-size: 12px; font-weight: 600;">{% widthratio dept.approvals total 100 %}%</span>
+                                </div>
+                            {% else %}
+                                <span style="color: var(--clr-text-muted); font-size: 12px;">No data</span>
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 40px; color: var(--clr-text-muted);">
+                        No department data available.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="panel" style="margin-top: 32px; border-left: 4px solid var(--clr-warning);">
+    <div class="panel-body" style="padding: 16px;">
+        <p style="margin: 0; font-size: 13px; color: var(--clr-text-main);">
+            <strong>Internal Note:</strong> These reports are strictly for tracking historical throughput. 
+            For real-time workload and bottleneck analysis, please refer to the 
+            <a href="{% url 'dashboard' %}" style="color: var(--clr-primary); font-weight: 600;">Main Dashboard</a>.
+        </p>
+    </div>
+</div>
+{% endblock %}

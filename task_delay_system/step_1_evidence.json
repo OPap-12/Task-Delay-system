@@ -1,0 +1,25 @@
+{
+    "step_1": {
+        "test_5": {
+            "db_approved": 14,
+            "db_rejected": 14
+        },
+        "test_6": [
+            {
+                "name": "General",
+                "approved": 4,
+                "rejected": 6
+            },
+            {
+                "name": "Marketing",
+                "approved": 5,
+                "rejected": 5
+            },
+            {
+                "name": "Sales",
+                "approved": 5,
+                "rejected": 3
+            }
+        ]
+    }
+}

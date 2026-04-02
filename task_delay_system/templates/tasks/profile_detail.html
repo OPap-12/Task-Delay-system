@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}User Profile | TaskFlow{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Profile Header -->
+    <div class="page-header" style="margin-bottom: 32px;">
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <div class="avatar" style="width: 72px; height: 72px; font-size: 28px; background: var(--clr-primary-soft); color: var(--clr-primary);">
+                {{ profile_user.first_name|default:profile_user.username|make_list|first|upper }}
+            </div>
+            <div>
+                <h1 style="font-size: 24px; font-weight: 700; color: var(--clr-text-main); margin-bottom: 4px;">{{ profile_user.get_full_name|default:profile_user.username }}</h1>
+                <p style="color: var(--clr-text-muted); font-size: 14px;">
+                    {% if profile_user.is_manager %}Manager{% else %}Employee{% endif %} 
+                    {% if profile_user.profile and profile_user.profile.department %}
+                        &bull; {{ profile_user.profile.department.name }}
+                    {% endif %}
+                    &bull; Member since {{ profile_user.date_joined|date:"M Y" }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Grid (Phase A Metrics) -->
+    <div class="stats-grid" style="margin-bottom: 40px;">
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-icon">📈</span>
+                <span class="stat-label">Total Assigned</span>
+            </div>
+            <div class="stat-value">{{ total_tasks }}</div>
+            <p class="stat-meta">Lifetime task assignments</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-icon">✅</span>
+                <span class="stat-label">Completed</span>
+            </div>
+            <div class="stat-value">{{ completed_tasks }}</div>
+            <div class="progress-bar-container" style="height: 6px; background: var(--clr-bg-alt); border-radius: 3px; margin: 12px 0 6px; overflow: hidden;">
+                <div style="width: {{ approval_rate|default:0 }}%; height: 100%; background: var(--clr-success);"></div>
+            </div>
+            <p class="stat-meta">{{ approval_rate }}% Success Rate</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-icon">⚠️</span>
+                <span class="stat-label">Rejections</span>
+            </div>
+            <div class="stat-value">{{ rejection_count }}</div>
+            <p class="stat-meta" style="color: var(--clr-danger);">Requires attention/rework</p>
+        </div>
+
+        <div class="stat-card" style="background: var(--clr-primary); color: white;">
+            <div class="stat-header">
+                <span class="stat-icon" style="background: rgba(255,255,255,0.2);">🏆</span>
+                <span class="stat-label" style="color: rgba(255,255,255,0.8);">Performance</span>
+            </div>
+            <div class="stat-value" style="color: white;">
+                {% if approval_rate >= 90 %}Elite{% elif approval_rate >= 75 %}High{% elif approval_rate >= 50 %}Stable{% else %}Developing{% endif %}
+            </div>
+            <p class="stat-meta" style="color: rgba(255,255,255,0.7);">Reliability Tier</p>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <!-- Recent Activity Feed -->
+        <div class="card" style="grid-column: span 8;">
+            <div class="card-header">
+                <h3 class="card-title">Recent Activity</h3>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                <div class="list-group">
+                    {% for task in recent_activity %}
+                    <div class="list-item" style="padding: 16px 24px; border-bottom: 1px solid var(--clr-border); display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <div class="status-indicator {{ task.status|lower }}"></div>
+                            <div>
+                                <a href="{% url 'task_detail' task.id %}" style="font-weight: 500; color: var(--clr-text-main); text-decoration: none;">{{ task.title }}</a>
+                                <p style="font-size: 12px; color: var(--clr-text-muted);">Updated {{ task.updated_at|timesince }} ago</p>
+                            </div>
+                        </div>
+                        <span class="badge status-{{ task.status }}">{{ task.get_status_display }}</span>
+                    </div>
+                    {% empty %}
+                    <div style="padding: 40px; text-align: center; color: var(--clr-text-muted);">
+                        No recent activity recorded.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Role Badge & Details -->
+        <div class="card" style="grid-column: span 4;">
+            <div class="card-header">
+                <h3 class="card-title">Account Details</h3>
+            </div>
+            <div class="card-body">
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 12px; color: var(--clr-text-muted); margin-bottom: 6px;">USERNAME</label>
+                    <p style="font-weight: 500;">@{{ profile_user.username }}</p>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 12px; color: var(--clr-text-muted); margin-bottom: 6px;">EMAIL</label>
+                    <p style="font-weight: 500;">{{ profile_user.email|default:"N/A" }}</p>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 12px; color: var(--clr-text-muted); margin-bottom: 6px;">ACCESS LEVEL</label>
+                    <div>
+                        {% if profile_user.is_manager %}
+                        <span class="badge badge-approved">Manager</span>
+                        {% else %}
+                        <span class="badge badge-in-progress">Employee</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

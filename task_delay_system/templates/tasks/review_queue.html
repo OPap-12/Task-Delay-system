@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Review Queue | TaskFlow{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+    <div>
+        <h1>Review Queue</h1>
+        <p>Tasks submitted by your team that need your approval.</p>
+    </div>
+    {% if total_pending %}
+    <div style="display:flex; align-items:center; gap:8px;">
+        <span class="badge status-READY_FOR_REVIEW" style="font-size:13px; padding:6px 14px;">{{ total_pending }} pending</span>
+    </div>
+    {% endif %}
+</div>
+
+{% if tasks %}
+<div class="data-table-wrap" id="review-table">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Task</th>
+                <th>Employee</th>
+                <th>Due Date</th>
+                <th>Priority</th>
+                <th>Risk</th>
+                <th style="text-align: right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr id="review-row-{{ task.id }}">
+                <!-- Task Title -->
+                <td>
+                    <div style="line-height:1.4;">
+                        <a href="{% url 'task_detail' task.id %}" class="cell-title" style="color:inherit; text-decoration:none; display:block;">{{ task.title }}</a>
+                        {% if task.description %}
+                        <span style="font-size:11px; color:var(--clr-text-faint); display:block; margin-top:2px;">{{ task.description|truncatewords:12 }}</span>
+                        {% endif %}
+                    </div>
+                </td>
+
+                <!-- Employee -->
+                <td>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="width:24px; height:24px; border-radius:50%; background:var(--clr-primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; flex-shrink:0;">{{ task.user.username|make_list|first|upper }}</div>
+                        <span>{{ task.user.get_full_name|default:task.user.username }}</span>
+                    </div>
+                </td>
+
+                <!-- Due Date -->
+                <td>
+                    <span>{{ task.due_date|date:"M d, Y" }}</span>
+                    <span style="display:block; font-size:11px; color:var(--clr-text-faint);">
+                        {% if task.days_until_due < 0 %}
+                            <span style="color:var(--clr-danger); font-weight:500;">{{ task.days_until_due|cut:"-" }}d overdue</span>
+                        {% elif task.days_until_due == 0 %}
+                            <span style="color:var(--clr-warning); font-weight:500;">Due today</span>
+                        {% else %}
+                            {{ task.days_until_due }}d left
+                        {% endif %}
+                    </span>
+                </td>
+
+                <!-- Priority -->
+                <td><span class="badge priority-{{ task.priority }}">{{ task.get_priority_display }}</span></td>
+
+                <!-- Risk -->
+                <td>
+                    <div class="risk-indicator">
+                        <span class="risk-dot {% if task.risk_score >= 90 %}critical{% elif task.risk_score >= 70 %}high{% elif task.risk_score >= 50 %}medium{% else %}low{% endif %}"></span>
+                        <span>{{ task.risk_score }}%</span>
+                    </div>
+                </td>
+
+                <!-- Actions -->
+                <td style="text-align:right;">
+                    {% if user != task.user %}
+                    <div style="display:flex; gap:6px; justify-content:flex-end;">
+                        <form method="post" action="{% url 'approve_task' task.id %}" style="margin:0;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success btn-sm">✓ Approve</button>
+                        </form>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="openRejectModal(&quot;{% url 'reject_task' task.id %}&quot;)">✕ Reject</button>
+                    </div>
+                    {% else %}
+                    <span style="font-size:12px; color:var(--clr-text-faint);">Own task</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="pagination-bar" id="pagination">
+    <span>{{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} tasks</span>
+    <div class="pagination-actions">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline btn-sm">← Prev</a>
+        {% endif %}
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline btn-sm">Next →</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<!-- Empty State -->
+<div class="empty-state-card" id="empty-state">
+    <div class="empty-icon-wrap">🎉</div>
+    <h3>Inbox Zero</h3>
+    <p>No tasks are waiting for your review. You're all caught up!</p>
+    <div class="empty-state-actions">
+        <a href="{% url 'task_list' %}" class="btn btn-outline">View All Tasks</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

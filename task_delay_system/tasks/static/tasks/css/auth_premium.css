@@ -1,0 +1,562 @@
+/* ============================================================
+   auth_premium.css — TaskFlow Premium Auth UI
+   Link in login.html & register.html via {% block extra_css %}
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+
+/* ── Override auth-page body ── */
+body.auth-page {
+  background: #060D1A;
+  background-image:
+    radial-gradient(ellipse 110% 55% at 50% -8%, rgba(37, 99, 235, 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 35% at 90% 100%, rgba(99, 102, 241, 0.10) 0%, transparent 55%);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+}
+
+body.auth-page .content-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 40px 20px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Container ── */
+.p-container {
+  width: 100%;
+  max-width: 480px;
+}
+
+/* ── Logo ── */
+.p-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.p-logo-mark {
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(145deg, #3B82F6, #1D4ED8);
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.5);
+}
+
+.p-logo-text {
+  font-size: 21px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.4px;
+  font-family: 'DM Sans', sans-serif;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* ── Card ── */
+.p-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 40px 36px;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.05),
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 8px 16px -4px rgba(0, 0, 0, 0.14),
+    0 24px 48px -8px rgba(0, 0, 0, 0.30);
+}
+
+/* ── Steps ── */
+.p-step {
+  display: none;
+}
+
+.p-step.active {
+  display: block;
+  animation: pFadeUp 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes pFadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Step indicator ── */
+.p-steps-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 24px;
+}
+
+.p-step-dot {
+  height: 4px;
+  border-radius: 2px;
+  background: #E2E8F0;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  width: 20px;
+}
+
+.p-step-dot.active {
+  background: #2563EB;
+  width: 28px;
+}
+
+.p-step-dot.done {
+  background: #10B981;
+}
+
+/* ── Typography ── */
+.p-heading {
+  font-size: 21px;
+  font-weight: 700;
+  color: #0F172A;
+  letter-spacing: -0.5px;
+  margin: 0 0 5px;
+  font-family: 'DM Sans', sans-serif;
+  line-height: 1.2;
+}
+
+.p-sub {
+  font-size: 14px;
+  color: #64748B;
+  margin: 0 0 22px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* "Signing in as" email badge */
+.p-email-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  border-radius: 20px;
+  padding: 3px 10px 3px 7px;
+  font-size: 13px;
+  color: #1E293B;
+  font-weight: 500;
+  margin-bottom: 22px;
+}
+
+.p-email-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10B981;
+  flex-shrink: 0;
+}
+
+/* ── Google Button ── */
+.p-btn-google {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 11px 16px;
+  background: #ffffff;
+  border: 1px solid #D1D5DB;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1E293B;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  margin-bottom: 18px;
+  letter-spacing: 0;
+}
+
+.p-btn-google:hover {
+  background: #F8FAFC;
+  border-color: #9CA3AF;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.p-btn-google:active { transform: scale(0.99); }
+
+/* ── Divider ── */
+.p-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.p-divider::before,
+.p-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #E2E8F0;
+}
+
+.p-divider span {
+  font-size: 12px;
+  color: #94A3B8;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+/* ── Fields ── */
+.p-field {
+  margin-bottom: 14px;
+}
+
+.p-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.p-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.p-input {
+  width: 100%;
+  padding: 11px 14px;
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  color: #0F172A;
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  box-sizing: border-box;
+  line-height: 1.4;
+}
+
+.p-input::placeholder { color: #94A3B8; }
+
+.p-input:focus {
+  background: #ffffff;
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+}
+
+.p-input.p-error {
+  border-color: #EF4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.10);
+}
+
+.p-input.p-ok {
+  border-color: #10B981;
+  box-shadow: none;
+}
+
+.p-input.has-right { padding-right: 44px; }
+
+/* Password toggle */
+.p-pw-toggle {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94A3B8;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.15s ease;
+  z-index: 2;
+}
+
+.p-pw-toggle:hover { color: #475569; }
+
+/* Field messages */
+.p-field-msg {
+  font-size: 12px;
+  margin-top: 5px;
+  min-height: 16px;
+  line-height: 1.4;
+  display: none;
+}
+
+.p-field-msg.show { display: flex; align-items: center; gap: 4px; }
+.p-field-msg.err  { color: #EF4444; }
+.p-field-msg.ok   { color: #10B981; }
+.p-field-msg.hint { color: #94A3B8; display: flex; }
+
+/* ── Password strength ── */
+.p-strength-wrap { margin-top: 8px; }
+
+.p-strength-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 5px;
+}
+
+.p-strength-seg {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: #E2E8F0;
+  transition: background 0.3s ease;
+}
+
+.p-strength-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #94A3B8;
+  transition: color 0.3s ease;
+}
+
+/* ── Username check ── */
+.p-username-status {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 5px;
+  min-height: 16px;
+}
+
+.p-username-status.show { display: flex; }
+.p-username-status.checking { color: #94A3B8; }
+.p-username-status.available { color: #10B981; }
+.p-username-status.taken { color: #EF4444; }
+
+.p-spinning {
+  width: 10px; height: 10px;
+  border: 1.5px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: pSpin 0.5s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pSpin { to { transform: rotate(360deg); } }
+
+/* Username hint pills */
+.p-username-hints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 7px;
+}
+
+.p-hint-pill {
+  font-size: 11px;
+  color: #64748B;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+/* ── Forgot password ── */
+.p-forgot-row {
+  text-align: right;
+  margin: -4px 0 16px;
+}
+
+.p-forgot {
+  font-size: 13px;
+  color: #3B82F6;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.p-forgot:hover { color: #1D4ED8; }
+
+/* ── Buttons ── */
+.p-btn-primary {
+  width: 100%;
+  padding: 12px 16px;
+  background: #2563EB;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  letter-spacing: 0.1px;
+}
+
+.p-btn-primary:hover:not(:disabled) {
+  background: #1D4ED8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.38);
+}
+
+.p-btn-primary:active:not(:disabled) {
+  transform: scale(0.988) translateY(0);
+}
+
+.p-btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.p-btn-primary.loading {
+  color: transparent;
+  pointer-events: none;
+}
+
+.p-btn-primary.loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: pSpin 0.55s linear infinite;
+}
+
+/* ── Back button ── */
+.p-btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748B;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 18px;
+  font-family: 'DM Sans', sans-serif;
+  transition: color 0.15s ease;
+}
+
+.p-btn-back:hover { color: #1E293B; }
+
+/* ── Error banner (non-field errors) ── */
+.p-error-banner {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 8px;
+  padding: 10px 13px;
+  font-size: 13px;
+  color: #DC2626;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* ── Footer link ── */
+.p-footer {
+  text-align: center;
+  font-size: 13px;
+  color: #64748B;
+  margin-top: 18px;
+}
+
+.p-footer a {
+  color: #2563EB;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.p-footer a:hover { color: #1D4ED8; }
+
+/* ── Django field errors ── */
+.p-django-error {
+  font-size: 12px;
+  color: #EF4444;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Input Icon (left-side SVG) ── */
+.p-input-icon {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: #94A3B8;
+  pointer-events: none;
+  transition: color 0.15s ease;
+  z-index: 1;
+}
+
+.p-input-wrap:focus-within .p-input-icon {
+  color: #3B82F6;
+}
+
+.p-input.has-icon {
+  padding-left: 40px;
+}
+
+/* ── Inline field row (e.g. first/last name) ── */
+.p-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ── Remember-me row ── */
+.p-remember-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 4px 0 6px;
+}
+
+.p-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: #475569;
+  cursor: pointer;
+  user-select: none;
+}
+
+.p-checkbox-label input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: #2563EB;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+/* ── Required asterisk ── */
+.p-required {
+  color: #EF4444;
+  font-weight: 500;
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .p-card { padding: 28px 22px; }
+  body.auth-page .content-wrapper { padding: 24px 16px; }
+  .p-field-row { grid-template-columns: 1fr; }
+}

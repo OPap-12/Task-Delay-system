@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+
+{% block title %}Tasks | TaskFlow{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+    <div>
+        <h1>{% if user.is_manager %}All Tasks{% else %}My Tasks{% endif %}</h1>
+        <p>{% if user.is_manager %}View and manage all team tasks.{% else %}Manage and track your assigned work items.{% endif %}</p>
+    </div>
+    {% if not user.is_manager %}
+    <a href="{% url 'create_task' %}" class="btn btn-primary" id="btn-new-task">
+        <span style="font-size:14px;">+</span> New Task
+    </a>
+    {% endif %}
+</div>
+
+<!-- Search & Filters -->
+<div class="filters-panel" style="background: #fff; padding: 20px; border-radius: 12px; margin-bottom: 24px; box-shadow: var(--shadow-sm); border: 1px solid var(--clr-border);">
+    <form method="get" id="filter-form" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
+        <!-- Search -->
+        <div style="flex: 1; min-width: 200px;">
+            <label style="display: block; font-size: 11px; font-weight: 700; color: var(--clr-text-faint); margin-bottom: 6px; text-transform: uppercase;">Search Tasks</label>
+            <div style="position: relative;">
+                <span style="position: absolute; left: 12px; top: 9px; color: var(--clr-text-faint);">🔍</span>
+                <input type="text" name="q" value="{{ query|default:'' }}" placeholder="Search by title..." style="width: 100%; padding: 8px 12px 8px 36px; border-radius: 8px; border: 1px solid var(--clr-border); background: var(--clr-bg-main);">
+            </div>
+        </div>
+
+        {% if user.is_manager %}
+        <!-- Employee Filter -->
+        <div style="min-width: 180px;">
+            <label style="display: block; font-size: 11px; font-weight: 700; color: var(--clr-text-faint); margin-bottom: 6px; text-transform: uppercase;">Team Member</label>
+            <select name="owner" onchange="this.form.submit()" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--clr-border); background: var(--clr-bg-main);">
+                <option value="">All Members</option>
+                {% for emp in employees %}
+                <option value="{{ emp.username }}" {% if owner_filter == emp.username %}selected{% endif %}>{{ emp.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+
+        <!-- Health Filter -->
+        <div style="min-width: 160px;">
+            <label style="display: block; font-size: 11px; font-weight: 700; color: var(--clr-text-faint); margin-bottom: 6px; text-transform: uppercase;">Urgency</label>
+            <select name="delay" onchange="this.form.submit()" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--clr-border); background: var(--clr-bg-main);">
+                <option value="">Any</option>
+                <option value="delayed" {% if delay_filter == 'delayed' %}selected{% endif %}>🔴 Overdue</option>
+                <option value="at_risk" {% if delay_filter == 'at_risk' %}selected{% endif %}>🟠 At Risk</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-outline" style="height: 38px;">Apply Filters</button>
+        {% if query or owner_filter or delay_filter or status_filter %}
+        <a href="{% url 'task_list' %}" class="btn btn-ghost" style="height: 38px; color: var(--clr-danger);">✕ Clear</a>
+        {% endif %}
+        
+        <!-- Status Tabs (Hidden Input) -->
+        <input type="hidden" name="status" id="status-input" value="{{ status_filter }}">
+    </form>
+</div>
+
+<!-- Status Tabs (Pills) -->
+<div class="status-tabs" style="display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 8px;">
+    <button type="button" onclick="setStatusFilter('')" class="tab-pill {% if not status_filter %}active{% endif %}">All Tasks</button>
+    <button type="button" onclick="setStatusFilter('pending')" class="tab-pill {% if status_filter == 'pending' %}active{% endif %}">Pending</button>
+    <button type="button" onclick="setStatusFilter('in_progress')" class="tab-pill {% if status_filter == 'in_progress' %}active{% endif %}">In Progress</button>
+    <button type="button" onclick="setStatusFilter('ready_for_review')" class="tab-pill {% if status_filter == 'ready_for_review' %}active{% endif %}">In Review</button>
+    <button type="button" onclick="setStatusFilter('approved')" class="tab-pill {% if status_filter == 'approved' %}active{% endif %}">Approved</button>
+    <button type="button" onclick="setStatusFilter('rejected')" class="tab-pill {% if status_filter == 'rejected' %}active{% endif %}">Rejected</button>
+</div>
+
+{% if tasks %}
+<div class="data-table-wrap">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th style="width: 40px; text-align: center;"><input type="checkbox" id="select-all-tasks" style="cursor: pointer;"></th>
+                <th>Task Details</th>
+                <th>Due Date</th>
+                <th>Priority</th>
+                <th>Health Risk</th>
+                <th style="text-align: right;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr class="{% if task.status == 'REJECTED' %}row-rejected{% endif %}">
+                <td style="text-align: center;"><input type="checkbox" class="task-checkbox" value="{{ task.id }}" style="cursor: pointer;"></td>
+                <td class="cell-title">
+                    <div style="line-height: 1.4;">
+                        <a href="{% url 'task_detail' task.id %}" class="task-link" style="font-weight: 600; color: var(--clr-text-main); text-decoration: none; display: block;">
+                            {{ task.title }}
+                        </a>
+                        {% if user.is_manager %}
+                        <span style="font-size: 11px; color: var(--clr-text-faint);">Assigned to: <strong>{{ task.user.username }}</strong></span>
+                        {% endif %}
+                        {% if task.status == 'REJECTED' %}
+                            <span style="color: var(--clr-danger); font-size: 11px; display: block; margin-top: 2px;" title="{{ task.rejected_reason }}">
+                                ⚠️ {{ task.rejected_reason|truncatewords:10 }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </td>
+                
+                <td>
+                    <span style="font-size: 13px; font-weight: 500;">{{ task.due_date|date:"M d, Y" }}</span>
+                    {% if task.days_until_due < 0 %}
+                        <span style="display: block; font-size: 10px; color: var(--clr-danger); font-weight: 700; text-transform: uppercase; margin-top: 2px;">Overdue</span>
+                    {% elif task.days_until_due == 0 %}
+                        <span style="display: block; font-size: 10px; color: var(--clr-warning); font-weight: 700; text-transform: uppercase; margin-top: 2px;">Due Today</span>
+                    {% endif %}
+                </td>
+
+                <td><span class="badge priority-{{ task.priority }}">{{ task.get_priority_display }}</span></td>
+
+                <td>
+                    {% if task.status != 'APPROVED' %}
+                    <div class="risk-indicator" style="gap: 6px;">
+                        <span class="risk-dot {% if task.risk_score >= 90 %}critical{% elif task.risk_score >= 70 %}high{% elif task.risk_score >= 50 %}medium{% else %}low{% endif %}"></span>
+                        <span style="font-size: 12px; font-weight: 600;">{{ task.risk_score }}%</span>
+                    </div>
+                    {% else %}
+                    <span style="color: var(--clr-text-faint); font-size: 12px;">Completed</span>
+                    {% endif %}
+                </td>
+
+                <td style="text-align: right;">
+                    <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                        {% if user == task.user %}
+                            {% if task.status == 'PENDING' %}
+                                <form method="post" action="{% url 'start_task' task.id %}" style="margin:0;">{% csrf_token %}<button type="submit" class="btn btn-outline btn-sm">▶ Start</button></form>
+                            {% elif task.status == 'IN_PROGRESS' or task.status == 'REJECTED' %}
+                                <form method="post" action="{% url 'submit_task' task.id %}" style="margin:0;">{% csrf_token %}<button type="submit" class="btn btn-primary btn-sm">Submit</button></form>
+                            {% endif %}
+                        {% endif %}
+                        
+                        {% if user.is_manager and task.status == 'READY_FOR_REVIEW' and user != task.user %}
+                            <form method="post" action="{% url 'approve_task' task.id %}" style="margin:0;">{% csrf_token %}<button type="submit" class="btn btn-success btn-sm">✓ Approve</button></form>
+                        {% endif %}
+                        
+                        <a href="{% url 'task_detail' task.id %}" class="btn btn-ghost btn-sm">View</a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="pagination-bar">
+    <span style="font-size: 13px; color: var(--clr-text-faint);">Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} items</span>
+    <div class="pagination-actions">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if owner_filter %}&owner={{ owner_filter }}{% endif %}{% if delay_filter %}&delay={{ delay_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-outline btn-sm">← Prev</a>
+        {% endif %}
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if owner_filter %}&owner={{ owner_filter }}{% endif %}{% if delay_filter %}&delay={{ delay_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-outline btn-sm">Next →</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-state-card" style="padding: 60px 20px;">
+    <div class="empty-icon-wrap" style="font-size: 48px;">🔍</div>
+    <h3>No tasks found</h3>
+    <p>Try adjusting your search or filters.</p>
+</div>
+{% endif %}
+
+<style>
+    .tab-pill {
+        padding: 8px 18px; background: #fff; border: 1px solid var(--clr-border); border-radius: 20px;
+        font-size: 13px; font-weight: 600; color: var(--clr-text-faint); cursor: pointer; white-space: nowrap; transition: all 0.2s;
+    }
+    .tab-pill:hover { border-color: var(--clr-primary); color: var(--clr-primary); background: rgba(59, 130, 246, 0.05); }
+    .tab-pill.active { background: var(--clr-primary); color: #fff; border-color: var(--clr-primary); box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2); }
+    .task-link:hover { color: var(--clr-primary) !important; text-decoration: underline !important; }
+    .row-rejected { background: rgba(239, 68, 68, 0.015); }
+</style>
+
+<script>
+    function setStatusFilter(status) {
+        document.getElementById('status-input').value = status;
+        document.getElementById('filter-form').submit();
+    }
+    const selectAll = document.getElementById('select-all-tasks');
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            document.querySelectorAll('.task-checkbox').forEach(cb => { cb.checked = selectAll.checked; });
+        });
+    }
+</script>
+{% endblock %}

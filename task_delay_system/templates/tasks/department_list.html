@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Departments | TaskFlow{% endblock %}
+
+{% block content %}
+<div class="header-actions" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h2 style="font-size: 20px; font-weight: 600; color: var(--clr-text-main); margin: 0;">Organization Structure</h2>
+    <div style="display: flex; gap: 12px;">
+        <a href="{% url 'assign_employee' %}" class="btn btn-outline">Assign Employee</a>
+        <a href="{% url 'department_create' %}" class="btn btn-primary">+ New Department</a>
+    </div>
+</div>
+
+<div class="data-table-wrap">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Department Name</th>
+                <th>Manager</th>
+                <th>Employees</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dept in departments %}
+            <tr>
+                <td>
+                    <div style="font-weight: 500; color: var(--clr-text-main);">{{ dept.name }}</div>
+                </td>
+                <td>
+                    {% if dept.manager %}
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--clr-primary-soft); color: var(--clr-primary); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 11px;">
+                                {{ dept.manager.username|make_list|first|upper }}
+                            </div>
+                            <span>{{ dept.manager.username }}</span>
+                        </div>
+                    {% else %}
+                        <span style="color: var(--clr-text-muted);">Unassigned</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div style="display: inline-flex; align-items: center; padding: 2px 8px; background: var(--clr-bg-main); border: 1px solid var(--clr-border); border-radius: var(--radius-full); font-size: 12px; font-weight: 500;">
+                        Users: {{ dept.employee_count }}
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">
+                    <div class="empty-state-card" style="border: none; background: transparent; padding: 40px 0;">
+                        <div class="empty-icon-wrap">🏢</div>
+                        <h3>No Departments Found</h3>
+                        <p>Create a department to start organizing your teams.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="panel" style="margin-top: 32px;">
+    <div class="panel-header">
+        <h3>Unassigned & Assigned Users Overview</h3>
+    </div>
+    <div class="panel-body" style="padding: 20px;">
+        <p style="color: var(--clr-text-muted); font-size: 13px; line-height: 1.5; margin: 0;">
+            Note: By default, users without explicit assignment are placed in the "General" organizational unit. 
+            Use the <strong>Assign Employee</strong> button above to allocate staff members to specific departments.
+        </p>
+    </div>
+</div>
+
+{% endblock %}

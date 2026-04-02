@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Task | TaskFlow{% endblock %}
+
+{% block content %}
+<div class="confirm-card" id="delete-confirm">
+    <div class="confirm-icon">🗑️</div>
+    <h2>Delete "{{ task.title }}"?</h2>
+    <p>This will permanently remove this task and all associated data. This action cannot be undone.</p>
+
+    <div style="background: var(--clr-bg-main); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 24px; text-align: left;">
+        <div style="font-size:13px; color:var(--clr-text-muted); display:flex; justify-content:space-between; margin-bottom:6px;">
+            <span>Status</span>
+            <span class="badge status-{{ task.status }}">{{ task.get_status_display }}</span>
+        </div>
+        <div style="font-size:13px; color:var(--clr-text-muted); display:flex; justify-content:space-between; margin-bottom:6px;">
+            <span>Due Date</span>
+            <span style="font-weight:500; color:var(--clr-text-main);">{{ task.due_date|date:"M d, Y" }}</span>
+        </div>
+        <div style="font-size:13px; color:var(--clr-text-muted); display:flex; justify-content:space-between;">
+            <span>Priority</span>
+            <span class="badge priority-{{ task.priority }}">{{ task.get_priority_display }}</span>
+        </div>
+    </div>
+
+    <form method="post" id="delete-form">
+        {% csrf_token %}
+        <div class="confirm-actions">
+            <a href="{% url 'task_list' %}" class="btn btn-secondary btn-lg">Cancel</a>
+            <button type="submit" class="btn btn-danger btn-lg" id="btn-confirm-delete">Delete Permanently</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.getElementById('delete-form').addEventListener('submit', function() {
+        document.getElementById('btn-confirm-delete').classList.add('loading');
+    });
+</script>
+{% endblock %}

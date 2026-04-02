@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | TaskFlow{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Welcome back, {{ user.first_name|default:user.username }}</h1>
+    <p>Here's an overview of your active workflow and key metrics.</p>
+</div>
+
+<!-- KPI Stats -->
+<div class="stats-grid">
+    <div class="stat-card stat-primary">
+        <span class="stat-label">{% if user.is_manager %}Total Active{% else %}Your Active Tasks{% endif %}</span>
+        <span class="stat-value">{{ active_count|default:"0" }}</span>
+        <div class="stat-progress-bg"><div class="stat-progress-fill" style="width: 100%;"></div></div>
+    </div>
+    
+    <div class="stat-card stat-danger">
+        <span class="stat-label">Overdue</span>
+        <span class="stat-value">{{ overdue_count|default:"0" }}</span>
+        <div class="stat-progress-bg"><div class="stat-progress-fill" style="width: {{ overdue_pct }}%;"></div></div>
+    </div>
+    
+    <div class="stat-card stat-warning">
+        <span class="stat-label">At Risk</span>
+        <span class="stat-value">{{ high_risk_count|default:"0" }}</span>
+        <div class="stat-progress-bg"><div class="stat-progress-fill" style="width: {{ high_risk_pct }}%;"></div></div>
+    </div>
+
+    {% if user.is_manager %}
+    <a href="{% url 'review_queue' %}" class="stat-card stat-info clickable-card" style="text-decoration: none; border: 1px solid var(--clr-info);">
+        <span class="stat-label">Review Queue</span>
+        <span class="stat-value">{{ review_count|default:"0" }}</span>
+        <span class="stat-subtext" style="color: var(--clr-info); font-weight: 600;">Action Required →</span>
+    </a>
+    {% else %}
+    <div class="stat-card stat-success">
+        <span class="stat-label">Done (7d)</span>
+        <span class="stat-value">{{ completed_7d|default:"0" }}</span>
+        <div class="stat-progress-bg"><div class="stat-progress-fill" style="width: 100%; background: var(--clr-success);"></div></div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="dashboard-grid">
+    
+    <!-- LEFT COLUMN: Status & Lists -->
+    <div class="dash-left" style="display: flex; flex-direction: column; gap: 24px;">
+        
+        <!-- Needs Attention Section -->
+        <div class="section-block" style="margin: 0;">
+            <div class="section-title" style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 20px;">🚨</span> Needs Your Attention
+            </div>
+            {% if needs_attention %}
+                <div class="attention-stack" style="display: flex; flex-direction: column; gap: 12px;">
+                    {% for task in needs_attention %}
+                    <div class="panel attention-card {% if task.status == 'REJECTED' %}border-danger{% else %}border-warning{% endif %}" style="padding: 16px; position: relative;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                    <span class="badge status-{{ task.status }}">{{ task.get_status_display }}</span>
+                                    <a href="{% url 'task_detail' task.id %}" style="font-weight: 600; color: var(--clr-text-main); text-decoration: none; font-size: 15px;">{{ task.title }}</a>
+                                </div>
+                                {% if task.status == 'REJECTED' %}
+                                    <p style="font-size: 13px; color: var(--clr-danger); margin: 4px 0 0 0;">⚠️ {{ task.rejected_reason|truncatewords:15 }}</p>
+                                {% else %}
+                                    <p style="font-size: 13px; color: var(--clr-text-muted); margin: 4px 0 0 0;">Overdue since {{ task.due_date|date:"M d" }}</p>
+                                {% endif %}
+                            </div>
+                            <a href="{% url 'task_detail' task.id %}" class="btn btn-ghost btn-sm">Fix →</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert-banner alert-success">✅ Everything is currently on track! No urgent items found.</div>
+            {% endif %}
+        </div>
+
+        {% if user.is_manager %}
+            <!-- MANAGER: Workload Breakdown -->
+            <div class="panel">
+                <div class="panel-header" style="padding: 16px 20px;">
+                    <h3 style="font-size: 16px;">👤 Team Workload</h3>
+                </div>
+                <div class="panel-body no-pad">
+                    <table class="data-table small-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Active Tasks</th>
+                                <th>Overdue</th>
+                                <th style="width: 140px;">Capacity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for emp in workload_distribution %}
+                            <tr>
+                                <td style="font-weight: 500;">{{ emp.username }}</td>
+                                <td>{{ emp.active_count }}</td>
+                                <td><span class="{% if emp.overdue_count > 0 %}color-danger{% endif %}">{{ emp.overdue_count }}</span></td>
+                                <td>
+                                    <div class="progress-bar" style="height: 6px; margin: 0;">
+                                        <div class="progress-fill" style="width: {{ emp.capacity_pct }}%;"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% else %}
+            <!-- EMPLOYEE: Recent Activity / Status Stats -->
+            <div class="panel">
+                <div class="panel-header" style="padding: 16px 20px;">
+                    <h3 style="font-size: 16px;">⏱️ Recently Active</h3>
+                </div>
+                <div class="panel-body no-pad">
+                    <table class="data-table small-table">
+                        <tbody>
+                            {% for task in recent_tasks %}
+                            <tr>
+                                <td><a href="{% url 'task_detail' task.id %}" style="color: inherit; text-decoration: none; font-weight: 500;">{{ task.title }}</a></td>
+                                <td><span class="badge status-{{ task.status }}">{{ task.get_status_display }}</span></td>
+                                <td style="text-align: right; color: var(--clr-text-faint); font-size: 12px;">{{ task.updated_at|timesince }} ago</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- RIGHT COLUMN: Distribution Charts -->
+    <div class="dash-right" style="display: flex; flex-direction: column; gap: 24px;">
+        
+        <!-- Status Distribution (Visualized as Bars) -->
+        <div class="panel">
+            <div class="panel-header" style="padding: 16px 20px;">
+                <h3 style="font-size: 15px;">📊 Status Mix</h3>
+            </div>
+            <div class="panel-body" style="padding: 16px 20px;">
+                <div class="dist-stack" style="display: flex; flex-direction: column; gap: 14px;">
+                    {% for item in status_mix %}
+                        <div class="dist-item">
+                            <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px;">
+                                <span>{{ item.label }}</span>
+                                <span style="font-weight: 600;">{{ item.count }}</span>
+                            </div>
+                            <div style="height: 8px; background: var(--clr-bg-main); border-radius: 4px; overflow: hidden;">
+                                <div style="height: 100%; width: {{ item.pct }}%; background: var(--clr-primary); opacity: 0.8;"></div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        {% if not user.is_manager %}
+            <!-- EMPLOYEE: Due This Week -->
+            <div class="panel">
+                <div class="panel-header" style="padding: 16px 20px; background: rgba(59, 130, 246, 0.03);">
+                    <h3 style="font-size: 15px;">🗓️ Due This Week</h3>
+                </div>
+                <div class="panel-body" style="padding: 0;">
+                    {% for task in tasks_due_week %}
+                    <div class="mini-task-row" style="padding: 12px 16px; border-bottom: 1px solid var(--clr-border); display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 11px; white-space: nowrap; color: var(--clr-text-faint);">{{ task.due_date|date:"D d" }}</span>
+                        <a href="{% url 'task_detail' task.id %}" style="font-size: 13px; color: var(--clr-text-main); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">{{ task.title }}</a>
+                        <span class="badge priority-{{ task.priority }}" style="zoom: 0.8;">{{ task.priority|first|upper }}</span>
+                    </div>
+                    {% empty %}
+                    <div style="padding: 24px; text-align: center; color: var(--clr-text-faint); font-size: 13px;">No deadlines this week.</div>
+                    {% endfor %}
+                </div>
+                <div class="panel-footer" style="padding: 10px; text-align: center;">
+                    <a href="{% url 'task_list' %}" style="font-size: 12px; font-weight: 600; text-decoration: none;">View All Tasks →</a>
+                </div>
+            </div>
+        {% else %}
+            <!-- MANAGER: Risk Distribution -->
+            <div class="panel">
+                <div class="panel-header" style="padding: 16px 20px;">
+                    <h3 style="font-size: 15px;">🔥 Risk Breakdown</h3>
+                </div>
+                <div class="panel-body" style="padding: 16px 20px;">
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        {% for label, count in risk_stats.items %}
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span style="font-size: 13px;">{{ label }}</span>
+                            <span class="badge {% if 'Critical' in label %}risk-critical{% elif 'High' in label %}risk-high{% elif 'Medium' in label %}risk-medium{% else %}status-APPROVED{% endif %}" style="min-width: 32px; text-align: center;">{{ count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .clickable-card { transition: transform 0.2s, box-shadow 0.2s; }
+    .clickable-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+    .border-danger { border-left: 4px solid var(--clr-danger) !important; }
+    .border-warning { border-left: 4px solid var(--clr-warning) !important; }
+    .attention-card { background: #fff; transition: background 0.2s; }
+    .attention-card:hover { background: var(--clr-bg-main); }
+    .small-table th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 20px !important; }
+    .small-table td { padding: 12px 20px !important; font-size: 13px; }
+    .color-danger { color: var(--clr-danger); font-weight: 700; }
+</style>
+
+{% endblock %}
