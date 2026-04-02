@@ -7,10 +7,11 @@
 
 /* ── Override auth-page body ── */
 body.auth-page {
-  background: #060D1A;
+  background-color: #060D1A !important;
+  background: #060D1A !important;
   background-image:
     radial-gradient(ellipse 110% 55% at 50% -8%, rgba(37, 99, 235, 0.22) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 35% at 90% 100%, rgba(99, 102, 241, 0.10) 0%, transparent 55%);
+    radial-gradient(ellipse 60% 35% at 90% 100%, rgba(99, 102, 241, 0.10) 0%, transparent 55%) !important;
   font-family: 'DM Sans', sans-serif;
   min-height: 100vh;
 }
@@ -58,7 +59,7 @@ body.auth-page .content-wrapper {
   color: #ffffff;
   letter-spacing: -0.4px;
   font-family: 'DM Sans', sans-serif;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.2);
 }
 
 /* ── Card ── */
