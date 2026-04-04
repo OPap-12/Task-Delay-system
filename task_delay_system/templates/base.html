@@ -19,9 +19,10 @@
 
     <!-- ══════ SIDEBAR ══════ -->
     {% if user.is_authenticated %}
+    <div id="top-progress-bar"></div>
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h2><span style="color: #60A5FA;">⚡</span> TaskFlow</h2>
+            <h2><span style="color: #3b82f6;">⚡</span> <span style="color: #3b82f6;">TaskFlow</span></h2>
         </div>
 
         <nav class="sidebar-nav">
@@ -126,7 +127,9 @@
             {% if messages %}
                 {% for message in messages %}
                     <div class="toast {{ message.tags }} show">
-                        {% if 'success' in message.tags %}✓{% elif 'error' in message.tags %}✕{% elif 'warning' in message.tags %}⚠{% else %}ℹ{% endif %}
+                        <span class="toast-icon">
+                            {% if 'success' in message.tags %}✓{% elif 'error' in message.tags %}✕{% elif 'warning' in message.tags %}⚠{% else %}ℹ{% endif %}
+                        </span>
                         {{ message }}
                     </div>
                 {% endfor %}
@@ -137,6 +140,7 @@
         <div class="content-wrapper">
             {% block content %}{% endblock %}
         </div>
+
         <!-- Reject Modal -->
         <div id="reject-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.6); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(2px);">
             <div style="background:var(--clr-bg-card); border-radius:var(--radius-md); width:100%; max-width:440px; padding:24px; box-shadow:var(--shadow-xl); border:1px solid var(--clr-border);">
@@ -215,6 +219,10 @@
         function connectWebSocket() {
             notificationSocket = new WebSocket(wsUrl);
 
+            notificationSocket.onopen = function() {
+                console.log('✅ TaskFlow WebSocket Live!');
+            };
+
             notificationSocket.onmessage = function(e) {
                 const data = JSON.parse(e.data);
                 showToast(data.message, data.type);
@@ -233,9 +241,13 @@
         function showToast(message, type) {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+            const iconContainer = document.createElement('span');
+            iconContainer.className = 'toast-icon';
+            iconContainer.textContent = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+            
             toast.className = 'toast ' + (type || '') + ' show';
-            toast.textContent = icon + ' ' + message;
+            toast.appendChild(iconContainer);
+            toast.appendChild(document.createTextNode(' ' + message));
             container.appendChild(toast);
             setTimeout(function() {
                 toast.classList.remove('show');
@@ -261,7 +273,7 @@
 
         function addDropdownAlert(title, message, type) {
             const list = document.getElementById('notif-list');
-            if (notifCount === 1) list.innerHTML = '';
+            if (notifCount === 0) list.innerHTML = '';
             const item = document.createElement('div');
             item.className = 'notif-item ' + (type || '');
             const titleEl = document.createElement('strong');
@@ -306,6 +318,64 @@
         // Close sidebar on mobile when clicking main area
         document.querySelector('.main-area').addEventListener('click', function() {
             document.getElementById('sidebar').classList.remove('open');
+        });
+
+        /* ══ Phase 1: Global Form Guards & Recovery ══ */
+        document.addEventListener('submit', function (e) {
+            const form = e.target;
+            
+            // 1. Double Submit Source Guard
+            if (form.dataset.submitted === 'true') {
+                e.preventDefault();
+                return;
+            }
+            
+            // If another script prevented submission (e.g. invalid form), don't trigger feedback
+            if (e.defaultPrevented) return;
+
+            const btn = form.querySelector('button[type="submit"]');
+            if (btn) {
+                // Short timeout to check if submission was successful or blocked by validation
+                setTimeout(function() {
+                    // Check again if submitted (standard forms will have navigated away, 
+                    // but we apply feedback for perceived performance during navigation)
+                    if (e.defaultPrevented) return;
+                    
+                    form.dataset.submitted = 'true';
+                    // 2. Disable Button & Visual Feedback
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-small"></span> Processing...';
+                    
+                    // 3. Instant Row Feedback
+                    const row = form.closest('tr');
+                    if (row) row.classList.add('submitting-row');
+                }, 10);
+            }
+        });
+
+        // 4. Failure Recovery (Browser Back/Reload)
+        window.addEventListener('pageshow', function (event) {
+            // Re-enable buttons and clear flags if page is shown from cache or navigation
+            document.querySelectorAll('button[disabled]').forEach(btn => {
+                btn.disabled = false;
+            });
+            document.querySelectorAll('form[data-submitted]').forEach(form => {
+                delete form.dataset.submitted;
+            });
+            document.querySelectorAll('.submitting-row').forEach(row => {
+                row.classList.remove('submitting-row');
+            });
+        });
+
+        /* ══ Phase 2: Top Progress Bar Trigger ══ */
+        document.querySelectorAll('a[href]').forEach(link => {
+            link.addEventListener('click', function (e) {
+                // Ignore hash links, blank targets, and non-navigational clicks
+                if (this.target === '_blank' || this.getAttribute('href').startsWith('#')) return;
+                
+                // Add loading class to trigger the width transition
+                document.body.classList.add('loading');
+            });
         });
     </script>
     {% endif %}

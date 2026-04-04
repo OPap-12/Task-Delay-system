@@ -9,11 +9,13 @@ ROLE_MANAGER = 'Manager'
 
 def is_employee(user):
     groups = {group.name for group in user.groups.all()}
-    return ROLE_EMPLOYEE in groups and ROLE_MANAGER not in groups
+    return ROLE_MANAGER not in groups
 
 def is_manager(user):
+    if hasattr(user, 'is_superuser') and user.is_superuser:
+        return True
     groups = {group.name for group in user.groups.all()}
-    return ROLE_MANAGER in groups and ROLE_EMPLOYEE not in groups
+    return ROLE_MANAGER in groups
 
 User.add_to_class('is_employee', property(is_employee))
 User.add_to_class('is_manager', property(is_manager))

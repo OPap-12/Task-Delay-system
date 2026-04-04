@@ -76,7 +76,11 @@
                     {% endfor %}
                 </div>
             {% else %}
-                <div class="alert-banner alert-success">✅ Everything is currently on track! No urgent items found.</div>
+                <div class="empty-state-card" style="padding: 40px 20px; border-style: solid; background: rgba(16, 185, 129, 0.03); border-color: rgba(16, 185, 129, 0.2);">
+                    <div class="empty-icon-wrap" style="background: rgba(16, 185, 129, 0.1); color: var(--clr-success); font-size: 24px; width: 48px; height: 48px;">✓</div>
+                    <h3 style="color: #065F46;">All Caught Up!</h3>
+                    <p style="margin-bottom: 0;">Everything is currently on track. No urgent items require your attention right now.</p>
+                </div>
             {% endif %}
         </div>
 
@@ -86,7 +90,7 @@
                 <div class="panel-header" style="padding: 16px 20px;">
                     <h3 style="font-size: 16px;">👤 Team Workload</h3>
                 </div>
-                <div class="panel-body no-pad">
+                <div class="panel-body no-pad table-responsive">
                     <table class="data-table small-table">
                         <thead>
                             <tr>
@@ -119,7 +123,7 @@
                 <div class="panel-header" style="padding: 16px 20px;">
                     <h3 style="font-size: 16px;">⏱️ Recently Active</h3>
                 </div>
-                <div class="panel-body no-pad">
+                <div class="panel-body no-pad table-responsive">
                     <table class="data-table small-table">
                         <tbody>
                             {% for task in recent_tasks %}

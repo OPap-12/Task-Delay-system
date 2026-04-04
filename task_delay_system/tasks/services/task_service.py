@@ -30,8 +30,8 @@ class TaskService:
             except Exception as e:
                 logger.error(f"WebSocket notification failed: {str(e)}")
         
-        # Ensures notification is sent ONLY if the transaction perfectly completes
-        transaction.on_commit(send_notification)
+        # Execute directly instead of on_commit to prevent Windows ASGI event loop dropout
+        send_notification()
 
     @staticmethod
     @transaction.atomic
@@ -47,6 +47,9 @@ class TaskService:
             raise PermissionError("Only the assigned employee can submit this task.")
 
         task.status = 'READY_FOR_REVIEW'
+        # Clear previous rejection reason when re-submitting
+        if task.rejected_reason:
+            task.rejected_reason = None
         task.save()
         logger.info(f"Task {task.id} submitted for review by {user.username}")
 
@@ -93,6 +96,8 @@ class TaskService:
         task.status = 'APPROVED'
         task.approved_by = manager
         task.approved_at = timezone.now()
+        # Clear rejection reason on success
+        task.rejected_reason = None
         task.save()
         
         logger.info(f"Task {task.id} approved by {manager}")

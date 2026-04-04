@@ -72,11 +72,11 @@
 </div>
 
 {% if tasks %}
-<div class="data-table-wrap">
+<div class="data-table-wrap table-responsive">
     <table class="data-table">
         <thead>
             <tr>
-                <th style="width: 40px; text-align: center;"><input type="checkbox" id="select-all-tasks" style="cursor: pointer;"></th>
+
                 <th>Task Details</th>
                 <th>Due Date</th>
                 <th>Priority</th>
@@ -87,7 +87,7 @@
         <tbody>
             {% for task in tasks %}
             <tr class="{% if task.status == 'REJECTED' %}row-rejected{% endif %}">
-                <td style="text-align: center;"><input type="checkbox" class="task-checkbox" value="{{ task.id }}" style="cursor: pointer;"></td>
+
                 <td class="cell-title">
                     <div style="line-height: 1.4;">
                         <a href="{% url 'task_detail' task.id %}" class="task-link" style="font-weight: 600; color: var(--clr-text-main); text-decoration: none; display: block;">
@@ -188,11 +188,6 @@
         document.getElementById('status-input').value = status;
         document.getElementById('filter-form').submit();
     }
-    const selectAll = document.getElementById('select-all-tasks');
-    if (selectAll) {
-        selectAll.addEventListener('change', function() {
-            document.querySelectorAll('.task-checkbox').forEach(cb => { cb.checked = selectAll.checked; });
-        });
-    }
+
 </script>
 {% endblock %}

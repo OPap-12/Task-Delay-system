@@ -87,6 +87,24 @@
         </div>
       </div>
 
+      <!-- Role Selection -->
+      <div class="p-field">
+        <label class="p-label" for="id_role">Account Role <span class="p-required">*</span></label>
+        <div class="p-input-wrap">
+          <svg class="p-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <select name="role" id="id_role" class="p-input has-icon">
+            <option value="Employee" {% if form.role.value == 'Employee' %}selected{% endif %}>Employee</option>
+            <option value="Manager" {% if form.role.value == 'Manager' %}selected{% endif %}>Manager</option>
+          </select>
+        </div>
+        {% if form.role.errors %}
+        <div class="p-field-msg err show">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          {{ form.role.errors|join:" " }}
+        </div>
+        {% endif %}
+      </div>
+
       <!-- Names (inline row) -->
       <div class="p-field-row">
         <div class="p-field">
@@ -247,6 +265,10 @@
 
   /* ── Confirm Password Match ── */
   pw2Input.addEventListener('input', function () {
+    var serverError = this.closest('.p-field').querySelector('.p-field-msg.err.show');
+    if (serverError && serverError.id !== 'pw-match-msg') {
+        serverError.style.display = 'none';
+    }
     checkPasswordMatch();
   });
 

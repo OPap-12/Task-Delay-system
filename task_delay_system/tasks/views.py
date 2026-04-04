@@ -61,7 +61,14 @@ def task_list(request):
     if query:
         tasks = tasks.filter(Q(title__icontains=query) | Q(description__icontains=query))
 
-    tasks = tasks.order_by('-priority', 'due_date')
+    tasks = tasks.annotate(
+        priority_order=Case(
+            When(priority='HIGH', then=Value(3)),
+            When(priority='MEDIUM', then=Value(2)),
+            When(priority='LOW', then=Value(1)),
+            output_field=IntegerField()
+        )
+    ).order_by('-priority_order', 'due_date')
 
     # Pagination
     paginator = Paginator(tasks, 12)
@@ -207,7 +214,7 @@ def submit_task(request, task_id):
     except ObjectDoesNotExist:
         messages.error(request, "Task not found.")
         
-    return redirect('task_list')
+    return redirect(request.META.get('HTTP_REFERER', 'task_list'))
 
 
 @login_required
@@ -225,7 +232,7 @@ def start_task(request, task_id):
     except ObjectDoesNotExist:
         messages.error(request, "Task not found.")
 
-    return redirect('task_list')
+    return redirect(request.META.get('HTTP_REFERER', 'task_list'))
 
 
 @login_required
@@ -245,7 +252,7 @@ def approve_task(request, task_id):
     except ObjectDoesNotExist:
         messages.error(request, "Task not found.")
         
-    return redirect('task_list')
+    return redirect(request.META.get('HTTP_REFERER', 'task_list'))
 
 
 @login_required
@@ -259,7 +266,7 @@ def reject_task(request, task_id):
     reason = request.POST.get('reason', '').strip()
     if not reason:
         messages.error(request, "A rejection reason is required.")
-        return redirect('task_list')
+        return redirect(request.META.get('HTTP_REFERER', 'task_list'))
     try:
         task = TaskService.reject_task(task_id, request.user, reason)
         _invalidate_dashboard_cache(task)
@@ -269,7 +276,7 @@ def reject_task(request, task_id):
     except ObjectDoesNotExist:
         messages.error(request, "Task not found.")
         
-    return redirect('task_list')
+    return redirect(request.META.get('HTTP_REFERER', 'task_list'))
 
 
 @login_required
@@ -383,9 +390,12 @@ def dashboard(request):
                 overdue_count=Count('tasks', filter=Q(tasks__due_date__lt=today, tasks__status__in=['PENDING', 'IN_PROGRESS']))
             ).values('username', 'active_count', 'overdue_count').order_by('-active_count')
             
+            # Determine max workload for capacity scaling
+            max_active = max([emp['active_count'] for emp in workload] + [5])
+            
             workload_list = []
             for emp in workload:
-                emp['capacity_pct'] = min(100, (emp['active_count'] * 100) // 10) # 10 is arbitrary 'max' capacity for bar
+                emp['capacity_pct'] = min(100, (emp['active_count'] * 100) // max_active)
                 workload_list.append(emp)
             context['workload_distribution'] = workload_list
 

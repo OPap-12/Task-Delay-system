@@ -26,9 +26,20 @@ class UserRegistrationForm(UserCreationForm):
             'placeholder': 'Last name (optional)'
         })
     )
+    ROLE_CHOICES = [
+        ('Employee', 'Employee'),
+        ('Manager', 'Manager'),
+    ]
+    role = forms.ChoiceField(
+        choices=ROLE_CHOICES,
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+        })
+    )
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name']
+        fields = ['username', 'email', 'first_name', 'last_name', 'role']
         widgets = {
             'username': forms.TextInput(attrs={
                 'class': 'form-control',
