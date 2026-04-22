@@ -43,6 +43,8 @@ class TaskViewSet(viewsets.ModelViewSet):
     @decorators.action(detail=True, methods=['patch'], permission_classes=[permissions.IsAuthenticated])
     def status(self, request, pk=None):
         """Unified endpoint for changing status using FSM centralized engine."""
+        # NOTE: Idempotency uses in-memory cache (Render free tier).
+        # For production, replace with Redis for persistence across instances/restarts.
         idem_key = request.headers.get('Idempotency-Key')
         if idem_key:
             cache_key = f"idem_{request.user.id}_{pk}_{idem_key}"

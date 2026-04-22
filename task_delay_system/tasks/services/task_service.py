@@ -15,7 +15,27 @@ class BusinessValidationError(Exception):
     """Raised when core business constraints are violated."""
     pass
 
+ROLE_MANAGER  = 'manager'
+ROLE_EMPLOYEE = 'employee'
+
 class TaskService:
+    @staticmethod
+    def _check_permission(user, action):
+        """
+        Centralized RBAC gate — always called BEFORE any FSM logic.
+        Raises PermissionError with explicit 403-mapped message.
+        """
+        manager_actions  = {'approve', 'reject', 'reassign'}
+        employee_actions = {'start', 'submit'}
+
+        if action in manager_actions:
+            if not user.groups.filter(name=ROLE_MANAGER).exists() and not user.is_superuser:
+                raise PermissionError(f"Action '{action}' requires manager role.")
+
+        elif action in employee_actions:
+            if not user.groups.filter(name=ROLE_EMPLOYEE).exists() and not user.is_superuser:
+                raise PermissionError(f"Action '{action}' requires employee role.")
+
     @staticmethod
     def _notify_websocket(group_name, title, message, type_alert):
         """Helper to safely dispatch websocket notifications after a DB commit."""
@@ -41,6 +61,7 @@ class TaskService:
     @transaction.atomic
     def submit_for_review(task_id, user, override=False):
         """Submit a task for manager review with transaction protection."""
+        TaskService._check_permission(user, 'submit')  # RBAC before FSM
         task = Task.objects.select_for_update().get(id=task_id)
 
         # Business Layer Validation
@@ -74,7 +95,8 @@ class TaskService:
     @staticmethod
     @transaction.atomic
     def start_task(task_id, user):
-        """Employee starts working on a task — transitions PENDING → IN_PROGRESS."""
+        """Employee starts working on a task -- transitions PENDING -> IN_PROGRESS."""
+        TaskService._check_permission(user, 'start')  # RBAC before FSM
         task = Task.objects.select_for_update().get(id=task_id)
 
         if task.status != 'PENDING' and task.status != 'REJECTED':
@@ -92,6 +114,7 @@ class TaskService:
     @transaction.atomic
     def approve_task(task_id, manager):
         """Approve a task, locking the row to stop race conditions."""
+        TaskService._check_permission(manager, 'approve')  # RBAC before FSM
         task = Task.objects.select_for_update().get(id=task_id)
 
         if task.status != 'READY_FOR_REVIEW':
@@ -123,6 +146,7 @@ class TaskService:
     @transaction.atomic
     def reject_task(task_id, manager, reason=None):
         """Reject a task and record the reason."""
+        TaskService._check_permission(manager, 'reject')  # RBAC before FSM
         task = Task.objects.select_for_update().get(id=task_id)
 
         if task.status != 'READY_FOR_REVIEW':
