@@ -3,7 +3,7 @@ from django.db import transaction
 from django.utils import timezone
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-from tasks.models import Task
+from tasks.models import Task, ROLE_EMPLOYEE, ROLE_MANAGER
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +15,7 @@ class BusinessValidationError(Exception):
     """Raised when core business constraints are violated."""
     pass
 
-ROLE_MANAGER  = 'manager'
-ROLE_EMPLOYEE = 'employee'
+# Role constants imported from models (single source of truth)
 
 class TaskService:
     @staticmethod
