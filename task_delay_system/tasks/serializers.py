@@ -34,9 +34,19 @@ class TaskSerializer(serializers.ModelSerializer):
             "updated_at",
             "completed_at"
         )
+        extra_kwargs = {
+            'assigned_to': {'required': True, 'allow_null': False},
+        }
 
     def validate_deadline(self, value):
         from django.utils import timezone
         if value < timezone.now().date():
             raise serializers.ValidationError("Deadline cannot be in the past.")
         return value
+
+    def validate(self, data):
+        if not data.get('assigned_to'):
+            raise serializers.ValidationError({
+                "assigned_to": "This field is required and cannot be empty."
+            })
+        return data
