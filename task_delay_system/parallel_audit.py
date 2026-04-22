@@ -17,7 +17,7 @@ def parallel_test():
     task = Task.objects.create(
         user=user,
         title="Parallel Test Task",
-        due_date=timezone.now().date(),
+        deadline=timezone.now().date(),
         status='IN_PROGRESS'
     )
     

@@ -27,11 +27,11 @@ class TaskQuerySet(QuerySet):
         return self.annotate(
             raw_risk=Case(
                 When(status='APPROVED', then=Value(0)),
-                When(due_date__lt=today, then=Value(100)),
-                When(due_date=today, then=Value(90)),
-                When(due_date=today + timedelta(days=1), then=Value(80)),
-                When(due_date=today + timedelta(days=2), then=Value(70)),
-                When(due_date__lte=today + timedelta(days=7), then=Value(50)),
+                When(deadline__lt=today, then=Value(100)),
+                When(deadline=today, then=Value(90)),
+                When(deadline=today + timedelta(days=1), then=Value(80)),
+                When(deadline=today + timedelta(days=2), then=Value(70)),
+                When(deadline__lte=today + timedelta(days=7), then=Value(50)),
                 default=Value(20),
                 output_field=IntegerField()
             ),
@@ -54,12 +54,14 @@ class Task(models.Model):
         ('REJECTED', 'Rejected'),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks')
+    assigned_to = models.ForeignKey(User, on_delete=models.CASCADE, related_name='assigned_tasks', null=True, blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_tasks', null=True, blank=True)
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
-    due_date = models.DateField()
+    deadline = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
     
     # Audit Fields
     approved_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='approved_tasks')
@@ -80,6 +82,11 @@ class Task(models.Model):
         permissions = [
             ("can_approve_task", "Can approve or reject tasks"),
             ("can_submit_task", "Can submit tasks for review"),
+        ]
+        indexes = [
+            models.Index(fields=['deadline']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['assigned_to'], name='active_tasks_idx', condition=models.Q(is_active=True)),
         ]
 
     @property
@@ -131,19 +138,19 @@ class Task(models.Model):
     def is_delayed(self):
         """Check if task is delayed"""
         if self.is_completed and self.completed_at:
-            return self.completed_at.date() > self.due_date
-        return timezone.now().date() > self.due_date
+            return self.completed_at.date() > self.deadline
+        return timezone.now().date() > self.deadline
 
     def is_at_risk(self):
         """Check if task is at risk (due within 2 days)"""
         if self.is_completed:
             return False
-        days_left = (self.due_date - timezone.now().date()).days
+        days_left = (self.deadline - timezone.now().date()).days
         return 0 <= days_left <= 2
 
     def days_until_due(self):
         """Calculate days until due date"""
-        return (self.due_date - timezone.now().date()).days
+        return (self.deadline - timezone.now().date()).days
 
 def get_default_department():
     dept, _ = Department.objects.get_or_create(name='General')
@@ -163,5 +170,20 @@ class EmployeeProfile(models.Model):
     def __str__(self):
         dept_name = self.department.name if self.department else 'Unassigned'
         return f"{self.user.username} - {dept_name}"
+
+class AuditLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='audit_logs')
+    action_type = models.CharField(max_length=50)
+    entity_type = models.CharField(max_length=50) # 'task', 'profile', etc.
+    entity_id = models.IntegerField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    old_payload = models.JSONField(null=True, blank=True)
+    new_payload = models.JSONField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.action_type} on {self.entity_type} {self.entity_id} by {self.user}"
 
 

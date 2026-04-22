@@ -13,19 +13,20 @@ class UserSerializer(serializers.ModelSerializer):
         return [group.name for group in obj.groups.all()]
 
 class TaskSerializer(serializers.ModelSerializer):
-    user_detail = UserSerializer(source='user', read_only=True)
+    assigned_to_detail = UserSerializer(source='assigned_to', read_only=True)
+    created_by_detail = UserSerializer(source='created_by', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
 
     class Meta:
         model = Task
         fields = (
-            'id', 'user', 'user_detail', 'title', 'description', 
-            'due_date', 'status', 'status_display',
+            'id', 'assigned_to', 'assigned_to_detail', 'created_by', 'created_by_detail', 
+            'title', 'description', 'deadline', 'status', 'status_display',
             'priority', 'is_completed', 'completed_at', 'created_at', 'updated_at',
             'approved_by', 'rejected_reason'
         )
         read_only_fields = (
-            "user",
+            "created_by",
             "status",
             "approved_by",
             "approved_at",
@@ -34,8 +35,8 @@ class TaskSerializer(serializers.ModelSerializer):
             "completed_at"
         )
 
-    def validate_due_date(self, value):
+    def validate_deadline(self, value):
         from django.utils import timezone
         if value < timezone.now().date():
-            raise serializers.ValidationError("Due date cannot be in the past.")
+            raise serializers.ValidationError("Deadline cannot be in the past.")
         return value

@@ -105,7 +105,7 @@
                 </td>
                 
                 <td>
-                    <span style="font-size: 13px; font-weight: 500;">{{ task.due_date|date:"M d, Y" }}</span>
+                    <span style="font-size: 13px; font-weight: 500;">{{ task.deadline|date:"M d, Y" }}</span>
                     {% if task.days_until_due < 0 %}
                         <span style="display: block; font-size: 10px; color: var(--clr-danger); font-weight: 700; text-transform: uppercase; margin-top: 2px;">Overdue</span>
                     {% elif task.days_until_due == 0 %}

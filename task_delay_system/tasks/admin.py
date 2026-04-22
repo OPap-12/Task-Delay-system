@@ -16,16 +16,16 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ('title', 'user', 'priority', 'status', 'due_date', 'is_delayed', 'is_at_risk')
-    list_filter = ('status', 'priority', 'due_date', 'created_at')
-    search_fields = ('title', 'description', 'user__username')
-    date_hierarchy = 'due_date'
+    list_display = ('title', 'assigned_to', 'created_by', 'priority', 'status', 'deadline', 'is_delayed', 'is_at_risk')
+    list_filter = ('status', 'priority', 'deadline', 'created_at')
+    search_fields = ('title', 'description', 'assigned_to__username', 'created_by__username')
+    date_hierarchy = 'deadline'
     ordering = ('-created_at',)
     readonly_fields = ('created_at', 'completed_at', 'approved_by', 'approved_at')
 
     fieldsets = (
         ('Task Information', {
-            'fields': ('title', 'description', 'due_date', 'priority', 'user'),
+            'fields': ('title', 'description', 'deadline', 'priority', 'assigned_to', 'created_by'),
         }),
         ('Workflow Status', {
             'fields': ('status', 'completed_at'),

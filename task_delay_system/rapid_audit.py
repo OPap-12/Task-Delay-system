@@ -18,7 +18,7 @@ def rapid_action_audit():
         user=user,
         title="Rapid Audit Task",
         description="Audit",
-        due_date=timezone.now().date(),
+        deadline=timezone.now().date(),
         priority='medium'
     )
     print(f"Created: {task.status}") # Should be PENDING

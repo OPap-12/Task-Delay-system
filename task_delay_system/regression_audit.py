@@ -16,7 +16,7 @@ def regression_audit():
     task = Task.objects.create(
         user=user,
         title="Regression Audit Task",
-        due_date=timezone.now().date(),
+        deadline=timezone.now().date(),
         priority='high'
     )
     print(f"1. Created Status: {task.status}")

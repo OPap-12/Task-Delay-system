@@ -6,7 +6,7 @@ from .models import Task
 class TaskForm(forms.ModelForm):
     class Meta:
         model = Task
-        fields = ['title', 'description', 'due_date', 'priority']
+        fields = ['title', 'description', 'deadline', 'priority']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -17,7 +17,7 @@ class TaskForm(forms.ModelForm):
                 'rows': 4,
                 'placeholder': 'Enter task description (optional)',
             }),
-            'due_date': forms.DateInput(attrs={
+            'deadline': forms.DateInput(attrs={
                 'class': 'form-control',
                 'type': 'date',
             }),
@@ -26,13 +26,13 @@ class TaskForm(forms.ModelForm):
             }),
         }
 
-    def clean_due_date(self):
+    def clean_deadline(self):
         """Reject due dates in the past when creating a new task."""
-        due_date = self.cleaned_data['due_date']
+        deadline = self.cleaned_data['deadline']
         # Only enforce on creation, not on update (instance already exists)
-        if not self.instance.pk and due_date < timezone.now().date():
+        if not self.instance.pk and deadline < timezone.now().date():
             raise forms.ValidationError("Due date cannot be in the past.")
-        return due_date
+        return deadline
 
 from django.contrib.auth.models import User
 from .models import Department, EmployeeProfile

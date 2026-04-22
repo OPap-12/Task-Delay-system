@@ -66,14 +66,14 @@
                     <div class="form-group">
                         <label class="form-label" style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">Target Deadline <span style="color: var(--clr-danger);">*</span></label>
                         <input type="date"
-                               name="{{ form.due_date.html_name }}"
-                               id="{{ form.due_date.id_for_label }}"
+                               name="{{ form.deadline.html_name }}"
+                               id="{{ form.deadline.id_for_label }}"
                                class="form-control"
                                style="padding: 10px 14px; font-size: 14px; border-radius: 10px;"
-                               value="{{ form.due_date.value|date:'Y-m-d'|default:'' }}"
+                               value="{{ form.deadline.value|date:'Y-m-d'|default:'' }}"
                                required>
-                        {% if form.due_date.errors %}
-                            <div style="color: var(--clr-danger); font-size: 12px; margin-top: 6px;">{{ form.due_date.errors|join:" " }}</div>
+                        {% if form.deadline.errors %}
+                            <div style="color: var(--clr-danger); font-size: 12px; margin-top: 6px;">{{ form.deadline.errors|join:" " }}</div>
                         {% endif %}
                     </div>
                     <div class="form-group">

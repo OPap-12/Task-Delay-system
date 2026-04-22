@@ -43,13 +43,13 @@ def run_stress_seed():
         user = random.choice(employees)
         status = random.choice(statuses)
         priority = random.choice(priorities)
-        due_date = timezone.now().date() + timedelta(days=random.randint(-10, 10))
+        deadline = timezone.now().date() + timedelta(days=random.randint(-10, 10))
         
         task = Task.objects.create(
             user=user,
             title=f'Stress Task {i}',
             description=f'Seed description {i}',
-            due_date=due_date,
+            deadline=deadline,
             status=status,
             priority=priority
         )

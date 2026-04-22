@@ -11,6 +11,10 @@ class TaskStateError(Exception):
     """Raised when an invalid task state transition occurs."""
     pass
 
+class BusinessValidationError(Exception):
+    """Raised when core business constraints are violated."""
+    pass
+
 class TaskService:
     @staticmethod
     def _notify_websocket(group_name, title, message, type_alert):
@@ -35,18 +39,24 @@ class TaskService:
 
     @staticmethod
     @transaction.atomic
-    def submit_for_review(task_id, user):
+    def submit_for_review(task_id, user, override=False):
         """Submit a task for manager review with transaction protection."""
-        # select_for_update prevents race conditions (double submission)
         task = Task.objects.select_for_update().get(id=task_id)
 
-        if task.status not in ['PENDING', 'IN_PROGRESS', 'REJECTED']:
-            raise TaskStateError(f"Cannot submit a task that is already {task.status}")
+        # Business Layer Validation
+        if not task.deadline or not task.assigned_to:
+            raise BusinessValidationError("Cannot submit task missing a deadline or assignee.")
 
-        if task.user != user and not user.is_superuser:
-            raise PermissionError("Only the assigned employee can submit this task.")
+        if not override:
+            if task.status not in ['PENDING', 'IN_PROGRESS', 'REJECTED']:
+                raise TaskStateError(f"Cannot submit a task that is already {task.status}")
+
+            if task.assigned_to != user and not user.is_manager:
+                raise PermissionError("Only the assigned employee can submit this task.")
 
         task.status = 'READY_FOR_REVIEW'
+        if override:
+            logger.warning(f"ADMIN OVERRIDE: Task {task.id} forced to READY_FOR_REVIEW by {user.username}")
         # Clear previous rejection reason when re-submitting
         if task.rejected_reason:
             task.rejected_reason = None
@@ -67,10 +77,10 @@ class TaskService:
         """Employee starts working on a task — transitions PENDING → IN_PROGRESS."""
         task = Task.objects.select_for_update().get(id=task_id)
 
-        if task.status != 'PENDING':
-            raise TaskStateError(f"Can only start a task that is PENDING. Currently {task.status}")
+        if task.status != 'PENDING' and task.status != 'REJECTED':
+            raise TaskStateError(f"Can only start a PENDING or REJECTED task. Currently {task.status}")
 
-        if task.user != user and not user.is_superuser:
+        if task.assigned_to != user:
             raise PermissionError("Only the assigned employee can start this task.")
 
         task.status = 'IN_PROGRESS'
@@ -87,23 +97,22 @@ class TaskService:
         if task.status != 'READY_FOR_REVIEW':
             raise TaskStateError(f"Task must be READY_FOR_REVIEW to approve. Currently {task.status}")
 
-        if not manager.is_manager and not manager.is_superuser:
-            raise PermissionError("Only active managers can perform this action.")
+        if not manager.is_manager:
+            raise PermissionError("Only Admins or Managers can perform this action.")
 
-        if task.user == manager:
+        if task.assigned_to == manager:
             raise TaskStateError("You cannot approve your own task.")
 
         task.status = 'APPROVED'
         task.approved_by = manager
         task.approved_at = timezone.now()
-        # Clear rejection reason on success
         task.rejected_reason = None
         task.save()
         
         logger.info(f"Task {task.id} approved by {manager}")
 
         TaskService._notify_websocket(
-            group_name=f"user_{task.user.id}",
+            group_name=f"user_{task.assigned_to.id}",
             title="Task Approved!",
             message=f"Your task '{task.title}' was approved by a manager.",
             type_alert="success"
@@ -119,10 +128,10 @@ class TaskService:
         if task.status != 'READY_FOR_REVIEW':
             raise TaskStateError(f"Task must be READY_FOR_REVIEW to reject. Currently {task.status}")
 
-        if not manager.is_manager and not manager.is_superuser:
-            raise PermissionError("Only active managers can perform this action.")
+        if not manager.is_manager:
+            raise PermissionError("Only Admins or Managers can perform this action.")
 
-        if task.user == manager:
+        if task.assigned_to == manager:
             raise TaskStateError("You cannot reject your own task.")
 
         task.status = 'REJECTED'
@@ -136,9 +145,35 @@ class TaskService:
         if reason:
             reject_msg += f" Reason: {reason}"
         TaskService._notify_websocket(
-            group_name=f"user_{task.user.id}",
+            group_name=f"user_{task.assigned_to.id}",
             title="Task Rejected",
             message=reject_msg,
             type_alert="error"
+        )
+        return task
+
+    @staticmethod
+    @transaction.atomic
+    def reassign_task(task_id, manager, new_assignee, override=False):
+        """Reassign an active task (Admin/Manager only)."""
+        task = Task.objects.select_for_update().get(id=task_id)
+
+        if not manager.is_manager:
+            raise PermissionError("Only active Admins or Managers can reassign tasks.")
+
+        if task.status == 'APPROVED' and not override:
+            raise TaskStateError("Cannot reassign an APPROVED task without an override flag.")
+
+        task.assigned_to = new_assignee
+        if override:
+            logger.warning(f"ADMIN OVERRIDE: Task {task.id} reassigned to {new_assignee.username} despite state {task.status}")
+        
+        task.save()
+
+        TaskService._notify_websocket(
+            group_name=f"user_{new_assignee.id}",
+            title="Task Assigned",
+            message=f"You have been assigned '{task.title}' by {manager.username}.",
+            type_alert="info"
         )
         return task

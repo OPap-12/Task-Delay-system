@@ -184,7 +184,7 @@
                     <!-- Dates -->
                     <div style="margin-bottom: 16px;">
                         <label style="display: block; font-size: 11px; font-weight: 600; color: var(--clr-text-faint); text-transform: uppercase; margin-bottom: 4px;">Due Date</label>
-                        <div style="font-size: 14px; font-weight: 600;">{{ task.due_date|date:"F d, Y" }}</div>
+                        <div style="font-size: 14px; font-weight: 600;">{{ task.deadline|date:"F d, Y" }}</div>
                         <div style="font-size: 12px; color: {% if task.days_until_due < 0 %}var(--clr-danger){% else %}var(--clr-text-muted){% endif %}; margin-top: 2px;">
                             {% if task.days_until_due < 0 %}{{ task.days_until_due|cut:"-" }} days overdue{% elif task.days_until_due == 0 %}Due today{% else %}{{ task.days_until_due }} days remaining{% endif %}
                         </div>

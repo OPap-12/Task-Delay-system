@@ -52,27 +52,27 @@ def seed_story():
 
     # 5. Create Tasks for High Performer (Alex)
     # Most tasks approved, some in progress
-    Task.objects.create(user=emp_high, title='Optimize Database Queries', description='Refactor slow SQL queries in the analytics module.', status='APPROVED', priority='H', due_date=today - timedelta(days=2), completed_at=timezone.now(), approved_by=manager)
-    Task.objects.create(user=emp_high, title='Update API Documentation', description='Ensure all new endpoints are documented in Swagger.', status='APPROVED', priority='M', due_date=today - timedelta(days=5), completed_at=timezone.now(), approved_by=manager)
-    Task.objects.create(user=emp_high, title='Fix Login Performance', description='Users reporting slow login on mobile.', status='IN_PROGRESS', priority='H', due_date=today + timedelta(days=3))
-    Task.objects.create(user=emp_high, title='Security Audit Preparations', status='PENDING', priority='M', due_date=today + timedelta(days=4))
+    Task.objects.create(user=emp_high, title='Optimize Database Queries', description='Refactor slow SQL queries in the analytics module.', status='APPROVED', priority='H', deadline=today - timedelta(days=2), completed_at=timezone.now(), approved_by=manager)
+    Task.objects.create(user=emp_high, title='Update API Documentation', description='Ensure all new endpoints are documented in Swagger.', status='APPROVED', priority='M', deadline=today - timedelta(days=5), completed_at=timezone.now(), approved_by=manager)
+    Task.objects.create(user=emp_high, title='Fix Login Performance', description='Users reporting slow login on mobile.', status='IN_PROGRESS', priority='H', deadline=today + timedelta(days=3))
+    Task.objects.create(user=emp_high, title='Security Audit Preparations', status='PENDING', priority='M', deadline=today + timedelta(days=4))
 
     # 6. Create Tasks for Underperformer (Bob)
     # Many rejections, overdue tasks
-    t1 = Task.objects.create(user=emp_low, title='Monthly Sales Report', description='Generate report for March.', status='REJECTED', priority='H', due_date=today - timedelta(days=1))
+    t1 = Task.objects.create(user=emp_low, title='Monthly Sales Report', description='Generate report for March.', status='REJECTED', priority='H', deadline=today - timedelta(days=1))
     t1.rejected_reason = "Data is missing for the last week. Please re-run the export."
     t1.save()
 
-    t2 = Task.objects.create(user=emp_low, title='Fleet Maintenance Log', description='Update logs for delivery trucks.', status='REJECTED', priority='M', due_date=today - timedelta(days=3))
+    t2 = Task.objects.create(user=emp_low, title='Fleet Maintenance Log', description='Update logs for delivery trucks.', status='REJECTED', priority='M', deadline=today - timedelta(days=3))
     t2.rejected_reason = "Improper formatting. Use the new template."
     t2.save()
 
-    Task.objects.create(user=emp_low, title='Quarterly Inventory Sync', status='IN_PROGRESS', priority='H', due_date=today - timedelta(days=5)) # EXTENSIONS/OVERDUE
-    Task.objects.create(user=emp_low, title='Supplier Contract Review', status='PENDING', priority='M', due_date=today - timedelta(days=10)) # VERY OVERDUE
+    Task.objects.create(user=emp_low, title='Quarterly Inventory Sync', status='IN_PROGRESS', priority='H', deadline=today - timedelta(days=5)) # EXTENSIONS/OVERDUE
+    Task.objects.create(user=emp_low, title='Supplier Contract Review', status='PENDING', priority='M', deadline=today - timedelta(days=10)) # VERY OVERDUE
 
     # 7. Create Tasks for New Employee (Charlie)
-    Task.objects.create(user=emp_new, title='Onboarding Module 1', status='APPROVED', priority='L', due_date=today, completed_at=timezone.now(), approved_by=manager)
-    Task.objects.create(user=emp_new, title='Setup Local Environment', status='IN_PROGRESS', priority='M', due_date=today + timedelta(days=1))
+    Task.objects.create(user=emp_new, title='Onboarding Module 1', status='APPROVED', priority='L', deadline=today, completed_at=timezone.now(), approved_by=manager)
+    Task.objects.create(user=emp_new, title='Setup Local Environment', status='IN_PROGRESS', priority='M', deadline=today + timedelta(days=1))
 
     print("Story-based seeding completed.")
 

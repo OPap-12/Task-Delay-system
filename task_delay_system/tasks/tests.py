@@ -22,7 +22,7 @@ class TaskModelTest(TestCase):
             user=self.user,
             title='Test Task',
             description='Test description',
-            due_date=timezone.now().date() + timedelta(days=due_offset_days),
+            deadline=timezone.now().date() + timedelta(days=due_offset_days),
             priority=priority,
             status='PENDING',
         )
@@ -125,7 +125,7 @@ class TaskViewTest(TestCase):
         self.task = Task.objects.create(
             user=self.user,
             title='User Task',
-            due_date=timezone.now().date() + timedelta(days=5),
+            deadline=timezone.now().date() + timedelta(days=5),
             priority='medium',
         )
 
@@ -162,7 +162,7 @@ class TaskViewTest(TestCase):
         response = self.client.post(reverse('create_task'), {
             'title': 'New Task',
             'description': 'Description',
-            'due_date': (timezone.now().date() + timedelta(days=3)).isoformat(),
+            'deadline': (timezone.now().date() + timedelta(days=3)).isoformat(),
             'priority': 'high',
         })
         self.assertEqual(response.status_code, 302)
@@ -173,7 +173,7 @@ class TaskViewTest(TestCase):
         self.client.login(username='testuser', password='testpass123')
         response = self.client.post(reverse('create_task'), {
             'title': 'Past Task',
-            'due_date': (timezone.now().date() - timedelta(days=1)).isoformat(),
+            'deadline': (timezone.now().date() - timedelta(days=1)).isoformat(),
             'priority': 'medium',
         })
         self.assertEqual(response.status_code, 200)  # Re-renders form with error
@@ -260,35 +260,35 @@ class TaskFormTest(TestCase):
         form = TaskForm(data={
             'title': 'Test Task',
             'description': 'Description',
-            'due_date': (timezone.now().date() + timedelta(days=5)).isoformat(),
+            'deadline': (timezone.now().date() + timedelta(days=5)).isoformat(),
             'priority': 'high',
         })
         self.assertTrue(form.is_valid())
 
     def test_missing_title(self):
         form = TaskForm(data={
-            'due_date': (timezone.now().date() + timedelta(days=5)).isoformat(),
+            'deadline': (timezone.now().date() + timedelta(days=5)).isoformat(),
             'priority': 'medium',
         })
         self.assertFalse(form.is_valid())
         self.assertIn('title', form.errors)
 
-    def test_missing_due_date(self):
+    def test_missing_deadline(self):
         form = TaskForm(data={
             'title': 'Task With No Date',
             'priority': 'medium',
         })
         self.assertFalse(form.is_valid())
-        self.assertIn('due_date', form.errors)
+        self.assertIn('deadline', form.errors)
 
-    def test_past_due_date_rejected(self):
+    def test_past_deadline_rejected(self):
         form = TaskForm(data={
             'title': 'Past Task',
-            'due_date': (timezone.now().date() - timedelta(days=1)).isoformat(),
+            'deadline': (timezone.now().date() - timedelta(days=1)).isoformat(),
             'priority': 'medium',
         })
         self.assertFalse(form.is_valid())
-        self.assertIn('due_date', form.errors)
+        self.assertIn('deadline', form.errors)
 
     def test_priority_field_present(self):
         """Priority field must be in the form."""
@@ -298,7 +298,7 @@ class TaskFormTest(TestCase):
     def test_invalid_priority_rejected(self):
         form = TaskForm(data={
             'title': 'Bad Priority',
-            'due_date': (timezone.now().date() + timedelta(days=5)).isoformat(),
+            'deadline': (timezone.now().date() + timedelta(days=5)).isoformat(),
             'priority': 'critical',  # Not a valid choice
         })
         self.assertFalse(form.is_valid())

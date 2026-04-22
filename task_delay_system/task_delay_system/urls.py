@@ -22,7 +22,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
-from tasks.api_views import TaskViewSet
+from tasks.api_views import TaskViewSet, DashboardMetricsView, ProfileView
 
 from django.http import HttpResponse
 from django.contrib.auth.models import User
@@ -38,7 +38,7 @@ def create_temp_superuser(request):
         return HttpResponse(f"Error creating superuser: {str(e)}")
 
 router = DefaultRouter()
-router.register(r'tasks', TaskViewSet)
+router.register('tasks', TaskViewSet, basename='task')
 
 urlpatterns = [
     path('setup-admin/', create_temp_superuser),
@@ -47,6 +47,8 @@ urlpatterns = [
     
     # API v1
     path('api/v1/', include(router.urls)),
+    path('api/v1/dashboard/metrics/', DashboardMetricsView.as_view(), name='dashboard_metrics'),
+    path('api/v1/profile/', ProfileView.as_view(), name='api_profile'),
     path('api/v1/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/v1/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     

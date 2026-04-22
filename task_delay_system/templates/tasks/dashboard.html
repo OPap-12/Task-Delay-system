@@ -67,7 +67,7 @@
                                 {% if task.status == 'REJECTED' %}
                                     <p style="font-size: 13px; color: var(--clr-danger); margin: 4px 0 0 0;">⚠️ {{ task.rejected_reason|truncatewords:15 }}</p>
                                 {% else %}
-                                    <p style="font-size: 13px; color: var(--clr-text-muted); margin: 4px 0 0 0;">Overdue since {{ task.due_date|date:"M d" }}</p>
+                                    <p style="font-size: 13px; color: var(--clr-text-muted); margin: 4px 0 0 0;">Overdue since {{ task.deadline|date:"M d" }}</p>
                                 {% endif %}
                             </div>
                             <a href="{% url 'task_detail' task.id %}" class="btn btn-ghost btn-sm">Fix →</a>
@@ -174,7 +174,7 @@
                 <div class="panel-body" style="padding: 0;">
                     {% for task in tasks_due_week %}
                     <div class="mini-task-row" style="padding: 12px 16px; border-bottom: 1px solid var(--clr-border); display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 11px; white-space: nowrap; color: var(--clr-text-faint);">{{ task.due_date|date:"D d" }}</span>
+                        <span style="font-size: 11px; white-space: nowrap; color: var(--clr-text-faint);">{{ task.deadline|date:"D d" }}</span>
                         <a href="{% url 'task_detail' task.id %}" style="font-size: 13px; color: var(--clr-text-main); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">{{ task.title }}</a>
                         <span class="badge priority-{{ task.priority }}" style="zoom: 0.8;">{{ task.priority|first|upper }}</span>
                     </div>

@@ -49,7 +49,7 @@ class Command(BaseCommand):
                 task = Task.objects.create(
                     user=emp,
                     title="[AUDIT-T3] Rapid Lifecycle Task",
-                    due_date=timezone.now().date(),
+                    deadline=timezone.now().date(),
                     priority='high'
                 )
                 t3_trace = []
@@ -114,7 +114,7 @@ class Command(BaseCommand):
             task4 = Task.objects.create(
                 user=emp,
                 title="[AUDIT-T4] Parallel Task",
-                due_date=timezone.now().date(),
+                deadline=timezone.now().date(),
                 status='IN_PROGRESS'
             )
             state_before_submit = task4.status
@@ -147,7 +147,7 @@ class Command(BaseCommand):
         self.sub("TEST 3-EXTRA: Invalid Transition Guard (attempt PENDING → APPROVED directly)")
         try:
             task_guard = Task.objects.create(
-                user=emp, title="[AUDIT] Guard Test", due_date=timezone.now().date(), status='PENDING')
+                user=emp, title="[AUDIT] Guard Test", deadline=timezone.now().date(), status='PENDING')
             try:
                 TaskService.approve_task(task_guard.id, mgr)
                 task_guard.delete()
@@ -193,7 +193,7 @@ class Command(BaseCommand):
         # POST action test — try to approve a task as employee
         try:
             guarded_task = Task.objects.create(
-                user=emp, title="[AUDIT] POST Guard", due_date=timezone.now().date(),
+                user=emp, title="[AUDIT] POST Guard", deadline=timezone.now().date(),
                 status='READY_FOR_REVIEW')
             TaskService.approve_task(guarded_task.id, emp)
             guarded_task.delete()
@@ -243,7 +243,7 @@ class Command(BaseCommand):
             try:
                 task8 = Task.objects.create(
                     user=mgr, title="[AUDIT-T8] Role Corrupt Task",
-                    due_date=timezone.now().date(), status='READY_FOR_REVIEW')
+                    deadline=timezone.now().date(), status='READY_FOR_REVIEW')
                 emp.refresh_from_db()
                 # Try approving as now-dual-role emp
                 result = TaskService.approve_task(task8.id, emp)
@@ -405,7 +405,7 @@ class Command(BaseCommand):
             # Create fresh task
             r_task = Task.objects.create(
                 user=emp, title="[AUDIT-REGRESSION] Full Lifecycle",
-                due_date=timezone.now().date(), priority='medium'
+                deadline=timezone.now().date(), priority='medium'
             )
             trace = [f"CREATED: {r_task.status}"]
 

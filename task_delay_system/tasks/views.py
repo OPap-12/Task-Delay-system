@@ -51,7 +51,7 @@ def task_list(request):
         tasks = tasks.filter(status=status_filter)
 
     if delay_filter == 'delayed':
-        tasks = tasks.filter(due_date__lt=today).exclude(status='APPROVED')
+        tasks = tasks.filter(deadline__lt=today).exclude(status='APPROVED')
     elif delay_filter == 'at_risk':
         tasks = tasks.filter(risk_score__gte=70).exclude(status='APPROVED')
 
@@ -68,7 +68,7 @@ def task_list(request):
             When(priority='LOW', then=Value(1)),
             output_field=IntegerField()
         )
-    ).order_by('-priority_order', 'due_date')
+    ).order_by('-priority_order', 'deadline')
 
     # Pagination
     paginator = Paginator(tasks, 12)
@@ -301,7 +301,7 @@ def review_queue(request):
     tasks = (Task.objects.with_risk_score()
              .filter(status='READY_FOR_REVIEW')
              .select_related('user')
-             .order_by('due_date', '-priority'))
+             .order_by('deadline', '-priority'))
 
     # Pagination
     paginator = Paginator(tasks, 15)
@@ -335,7 +335,7 @@ def dashboard(request):
 
         # Base filters
         active_tasks = tasks.exclude(status='APPROVED')
-        overdue_tasks = active_tasks.filter(due_date__lt=today)
+        overdue_tasks = active_tasks.filter(deadline__lt=today)
         high_risk_tasks = active_tasks.filter(risk_score__gte=70)
         
         # 1. Status Distribution (Donut Chart Data)
@@ -348,12 +348,12 @@ def dashboard(request):
 
         # 2. Tasks Due This Week (Next 7 days)
         next_week = today + timedelta(days=7)
-        tasks_due_week = active_tasks.filter(due_date__range=[today, next_week]).order_by('due_date')[:5]
+        tasks_due_week = active_tasks.filter(deadline__range=[today, next_week]).order_by('deadline')[:5]
 
         # 3. Needs Attention (Rejected OR Overdue)
         needs_attention = tasks.filter(
-            Q(status='REJECTED') | Q(due_date__lt=today, status__in=['PENDING', 'IN_PROGRESS'])
-        ).order_by('-priority', 'due_date')[:5]
+            Q(status='REJECTED') | Q(deadline__lt=today, status__in=['PENDING', 'IN_PROGRESS'])
+        ).order_by('-priority', 'deadline')[:5]
 
         # Build context
         context = {
@@ -387,7 +387,7 @@ def dashboard(request):
             # 5. Manager: Employee Workload Breakdown
             workload = User.objects.filter(tasks__status__in=['PENDING', 'IN_PROGRESS', 'READY_FOR_REVIEW']).distinct().annotate(
                 active_count=Count('tasks', filter=Q(tasks__status__in=['PENDING', 'IN_PROGRESS'])),
-                overdue_count=Count('tasks', filter=Q(tasks__due_date__lt=today, tasks__status__in=['PENDING', 'IN_PROGRESS']))
+                overdue_count=Count('tasks', filter=Q(tasks__deadline__lt=today, tasks__status__in=['PENDING', 'IN_PROGRESS']))
             ).values('username', 'active_count', 'overdue_count').order_by('-active_count')
             
             # Determine max workload for capacity scaling

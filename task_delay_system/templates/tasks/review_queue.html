@@ -52,7 +52,7 @@
 
                 <!-- Due Date -->
                 <td>
-                    <span>{{ task.due_date|date:"M d, Y" }}</span>
+                    <span>{{ task.deadline|date:"M d, Y" }}</span>
                     <span style="display:block; font-size:11px; color:var(--clr-text-faint);">
                         {% if task.days_until_due < 0 %}
                             <span style="color:var(--clr-danger); font-weight:500;">{{ task.days_until_due|cut:"-" }}d overdue</span>

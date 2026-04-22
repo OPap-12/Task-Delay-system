@@ -18,7 +18,7 @@ def send_manager_daily_digest():
     today = timezone.now().date()
     # At risk means not completed, but due in 2 days or less (including overdue)
     issues = Task.objects.exclude(status='APPROVED').filter(
-        due_date__lte=today + timedelta(days=2)
+        deadline__lte=today + timedelta(days=2)
     )
 
     if not issues.exists():
@@ -40,8 +40,8 @@ def send_manager_daily_digest():
     
     body_lines = [f"Hello Manager,\n\nYou have {issues.count()} tasks that need attention:\n"]
     for task in issues:
-        status_note = "OVERDUE" if task.due_date < today else "DUE SOON"
-        body_lines.append(f"- [{status_note}] {task.title} (Assigned to {task.user.username}) - Due: {task.due_date}")
+        status_note = "OVERDUE" if task.deadline < today else "DUE SOON"
+        body_lines.append(f"- [{status_note}] {task.title} (Assigned to {task.user.username}) - Due: {task.deadline}")
     
     body_lines.append("\nPlease log into the system to review them.")
     message = "\n".join(body_lines)
@@ -66,8 +66,8 @@ def send_employee_reminders():
     tomorrow = today + timedelta(days=1)
     
     imminent_tasks = Task.objects.exclude(status='APPROVED').filter(
-        due_date__gte=today,
-        due_date__lte=tomorrow
+        deadline__gte=today,
+        deadline__lte=tomorrow
     ).select_related('user')
 
     count = 0
@@ -75,7 +75,7 @@ def send_employee_reminders():
         if task.user.email:
             send_mail(
                 f"Action Required: Task '{task.title}' is due soon!",
-                f"Hello {task.user.first_name or task.user.username},\n\nThis is a reminder that your task '{task.title}' is due on {task.due_date}.\nPlease complete it or submit it for review.",
+                f"Hello {task.user.first_name or task.user.username},\n\nThis is a reminder that your task '{task.title}' is due on {task.deadline}.\nPlease complete it or submit it for review.",
                 settings.DEFAULT_FROM_EMAIL,
                 [task.user.email],
                 fail_silently=True,
