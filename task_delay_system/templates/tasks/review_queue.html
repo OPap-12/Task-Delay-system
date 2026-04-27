@@ -45,8 +45,8 @@
                 <!-- Employee -->
                 <td>
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="width:24px; height:24px; border-radius:50%; background:var(--clr-primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; flex-shrink:0;">{{ task.user.username|make_list|first|upper }}</div>
-                        <span>{{ task.user.get_full_name|default:task.user.username }}</span>
+                        <div style="width:24px; height:24px; border-radius:50%; background:var(--clr-primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; flex-shrink:0;">{{ task.assigned_to.username|make_list|first|upper }}</div>
+                        <span>{{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</span>
                     </div>
                 </td>
 
@@ -77,13 +77,12 @@
 
                 <!-- Actions -->
                 <td style="text-align:right;">
-                    {% if user != task.user %}
+                    {% if user != task.assigned_to %}
                     <div style="display:flex; gap:6px; justify-content:flex-end;">
-                        <form method="post" action="{% url 'approve_task' task.id %}" style="margin:0;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-success btn-sm">✓ Approve</button>
-                        </form>
-                        <button type="button" class="btn btn-danger btn-sm" onclick="openRejectModal(&quot;{% url 'reject_task' task.id %}&quot;)">✕ Reject</button>
+                        <button type="button" class="btn btn-success btn-sm"
+                                onclick="rqApprove('{% url 'approve_task' task.id %}', this)">✓ Approve</button>
+                        <button type="button" class="btn btn-danger btn-sm"
+                                onclick="window.openRejectModal('{% url 'reject_task' task.id %}')">✕ Reject</button>
                     </div>
                     {% else %}
                     <span style="font-size:12px; color:var(--clr-text-faint);">Own task</span>
@@ -121,4 +120,45 @@
     </div>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getCsrfToken() {
+    const match = document.cookie.split(';').find(c => c.trim().startsWith('csrftoken='));
+    return match ? decodeURIComponent(match.split('=')[1]) : '';
+}
+
+function rqApprove(url, btn) {
+    btn.disabled = true;
+    btn.textContent = 'Approving…';
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: '',
+        redirect: 'manual',
+    }).then(res => {
+        // Django redirects (302) on success; fetch manual gives type=opaqueredirect / status=0
+        if (res.ok || res.type === 'opaqueredirect' || res.status === 0) {
+            const row = btn.closest('tr');
+            if (row) {
+                row.style.transition = 'opacity 0.3s';
+                row.style.opacity = '0';
+                setTimeout(() => row.remove(), 300);
+            }
+            if (typeof showToast === 'function') showToast('Task approved successfully.', 'success');
+        } else {
+            btn.disabled = false;
+            btn.textContent = '✓ Approve';
+            alert('Approval failed (status ' + res.status + '). Please refresh and try again.');
+        }
+    }).catch(() => {
+        btn.disabled = false;
+        btn.textContent = '✓ Approve';
+    });
+}
+</script>
 {% endblock %}

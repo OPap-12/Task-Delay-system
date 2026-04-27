@@ -1,7 +1,8 @@
 import logging
+import threading
+from asgiref.sync import async_to_sync
 from django.db import transaction
 from django.utils import timezone
-from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from tasks.models import Task, ROLE_EMPLOYEE, ROLE_MANAGER
 
@@ -37,24 +38,42 @@ class TaskService:
 
     @staticmethod
     def _notify_websocket(group_name, title, message, type_alert):
-        """Helper to safely dispatch websocket notifications after a DB commit."""
-        def send_notification():
+        """
+        Dispatch a WebSocket group notification in a background daemon thread.
+
+        Why a thread? Django views run inside daphne's async event loop. Calling
+        async_to_sync() from within that loop causes a deadlock on Windows. By
+        spawning a daemon thread, asyncio.run() creates a *fresh* event loop
+        with no conflict, and the thread is cleaned up automatically by the OS.
+        """
+        async def _send():
             try:
                 channel_layer = get_channel_layer()
-                async_to_sync(channel_layer.group_send)(
+                await channel_layer.group_send(
                     group_name,
                     {
                         "type": "send_notification",
                         "title": title,
                         "message": message,
-                        "type_alert": type_alert
+                        "type_alert": type_alert,
                     }
                 )
             except Exception as e:
                 logger.error(f"WebSocket notification failed: {str(e)}")
-        
-        # Execute directly instead of on_commit to prevent Windows ASGI event loop dropout
-        send_notification()
+
+        def _thread_target():
+            # async_to_sync from a plain thread (no running loop) schedules
+            # the coroutine on daphne's main event loop via asgiref's
+            # thread-sensitivity mechanism — which is where InMemoryChannelLayer
+            # consumers are waiting. asyncio.run() would use a NEW isolated loop
+            # and never wake those consumers.
+            try:
+                async_to_sync(_send)()
+            except Exception as e:
+                logger.error(f"WebSocket thread dispatch failed: {str(e)}")
+
+        thread = threading.Thread(target=_thread_target, daemon=True)
+        thread.start()
 
     @staticmethod
     @transaction.atomic

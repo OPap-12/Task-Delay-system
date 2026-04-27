@@ -20,7 +20,11 @@ function applyDelta(tasks) {
 
 export function connectWebSocket(userId, onMessage) {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  socket = new WebSocket(`${proto}://${location.host}/ws/notifications/${userId}/`);
+  socket = new WebSocket(`${proto}://${location.host}/ws/notifications/`);
+
+  window.addEventListener('beforeunload', () => {
+    if (socket?.readyState === WebSocket.OPEN) socket.close();
+  });
 
   socket.onopen = () => {
     retries = 0;

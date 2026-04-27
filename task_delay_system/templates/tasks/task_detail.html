@@ -29,7 +29,7 @@
         </div>
         
         <div class="header-actions" style="display: flex; gap: 8px;">
-            {% if user == task.user and task.status != 'APPROVED' and task.status != 'READY_FOR_REVIEW' %}
+            {% if user == task.assigned_to and task.status != 'APPROVED' and task.status != 'READY_FOR_REVIEW' %}
                 <a href="{% url 'update_task' task.id %}" class="btn btn-outline" style="background: #fff;">✏️ Edit Details</a>
             {% endif %}
         </div>
@@ -128,7 +128,7 @@
             <div class="action-panel" style="background: #fff; border: 1px solid var(--clr-border); border-radius: 12px; padding: 24px; box-shadow: var(--shadow-sm);">
                 <h3 style="margin: 0 0 16px 0; font-size: 16px;">Workflow Actions</h3>
                 <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                    {% if user == task.user and task.status != 'APPROVED' %}
+                    {% if user == task.assigned_to and task.status != 'APPROVED' %}
                         {% if task.status == 'PENDING' %}
                             <form method="post" action="{% url 'start_task' task.id %}" style="margin:0;">
                                 {% csrf_token %}
@@ -148,15 +148,15 @@
                             </form>
                         {% endif %}
 
-                    {% elif task.status == 'READY_FOR_REVIEW' and user.is_manager and user != task.user %}
+                    {% elif task.status == 'READY_FOR_REVIEW' and user.is_manager and user != task.assigned_to %}
                         <form method="post" action="{% url 'approve_task' task.id %}" style="margin:0;">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-success" style="padding: 10px 24px;">✓ Approve Task</button>
                         </form>
-                        <button type="button" class="btn btn-danger" onclick="openRejectModal('{% url 'reject_task' task.id %}')" style="padding: 10px 24px;">✕ Reject Task</button>
+                        <button type="button" class="btn btn-danger" onclick="window.openRejectModal('{% url 'reject_task' task.id %}')" style="padding: 10px 24px;">✕ Reject Task</button>
                     {% endif %}
                     
-                    {% if user == task.user and task.status == 'PENDING' %}
+                    {% if user == task.assigned_to and task.status == 'PENDING' %}
                     <a href="{% url 'delete_task' task.id %}" class="btn btn-ghost" style="color: var(--clr-danger);">Delete Task</a>
                     {% endif %}
                 </div>
@@ -174,8 +174,8 @@
                     <div style="margin-bottom: 16px;">
                         <label style="display: block; font-size: 11px; font-weight: 600; color: var(--clr-text-faint); text-transform: uppercase; margin-bottom: 4px;">Assigned To</label>
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <div class="avatar-sm" style="width: 24px; height: 24px; background: var(--clr-primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;">{{ task.user.username|first|upper }}</div>
-                            <span style="font-size: 14px; font-weight: 500;">{{ task.user.get_full_name|default:task.user.username }}</span>
+                            <div class="avatar-sm" style="width: 24px; height: 24px; background: var(--clr-primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;">{{ task.assigned_to.username|first|upper }}</div>
+                            <span style="font-size: 14px; font-weight: 500;">{{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</span>
                         </div>
                     </div>
 
@@ -215,28 +215,5 @@
 
 </div>
 
-<style>
-    .step { flex: 1; text-align: center; z-index: 2; position: relative; }
-    .step-circle {
-        width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--clr-border);
-        background: #fff; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center;
-        font-size: 13px; font-weight: 700; color: var(--clr-text-faint); transition: all 0.3s;
-    }
-    .step-circle.active { background: var(--clr-primary); border-color: var(--clr-primary); color: #fff; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); }
-    .step-circle.success { background: #10B981; border-color: #10B981; color: #fff; }
-    .step-circle.danger { background: var(--clr-danger); border-color: var(--clr-danger); color: #fff; }
-    .step-circle.upcoming { background: var(--clr-bg-main); color: var(--clr-text-faint); border-style: dashed; }
-    
-    .step-label { font-size: 11px; font-weight: 600; color: var(--clr-text-faint); text-transform: uppercase; letter-spacing: 0.02em; }
-    .step-label.active { color: var(--clr-text-main); }
-    
-    .step-line { flex: 2; height: 2px; background: var(--clr-border); margin-top: -24px; z-index: 1; }
-    .step-line.success { background: #10B981; }
-    .step-line.active { background: var(--clr-primary); }
 
-    @keyframes slideUp {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-</style>
 {% endblock %}

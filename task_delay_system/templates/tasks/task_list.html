@@ -21,18 +21,18 @@
     <form method="get" id="filter-form" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
         <!-- Search -->
         <div style="flex: 1; min-width: 200px;">
-            <label style="display: block; font-size: 11px; font-weight: 700; color: var(--clr-text-faint); margin-bottom: 6px; text-transform: uppercase;">Search Tasks</label>
+            <label for="search-input" style="display: block; font-size: 11px; font-weight: 700; color: var(--clr-text-faint); margin-bottom: 6px; text-transform: uppercase;">Search Tasks</label>
             <div style="position: relative;">
                 <span style="position: absolute; left: 12px; top: 9px; color: var(--clr-text-faint);">🔍</span>
-                <input type="text" name="q" value="{{ query|default:'' }}" placeholder="Search by title..." style="width: 100%; padding: 8px 12px 8px 36px; border-radius: 8px; border: 1px solid var(--clr-border); background: var(--clr-bg-main);">
+                <input type="text" id="search-input" name="q" value="{{ query|default:'' }}" placeholder="Search by title..." style="width: 100%; padding: 8px 12px 8px 36px; border-radius: 8px; border: 1px solid var(--clr-border); background: var(--clr-bg-main);">
             </div>
         </div>
 
         {% if user.is_manager %}
         <!-- Employee Filter -->
         <div style="min-width: 180px;">
-            <label style="display: block; font-size: 11px; font-weight: 700; color: var(--clr-text-faint); margin-bottom: 6px; text-transform: uppercase;">Team Member</label>
-            <select name="owner" onchange="this.form.submit()" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--clr-border); background: var(--clr-bg-main);">
+            <label for="search-input" style="display: block; font-size: 11px; font-weight: 700; color: var(--clr-text-faint); margin-bottom: 6px; text-transform: uppercase;">Team Member</label>
+            <select id="owner-select" name="owner" onchange="this.form.submit()" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--clr-border); background: var(--clr-bg-main);">
                 <option value="">All Members</option>
                 {% for emp in employees %}
                 <option value="{{ emp.username }}" {% if owner_filter == emp.username %}selected{% endif %}>{{ emp.username }}</option>
@@ -43,8 +43,8 @@
 
         <!-- Health Filter -->
         <div style="min-width: 160px;">
-            <label style="display: block; font-size: 11px; font-weight: 700; color: var(--clr-text-faint); margin-bottom: 6px; text-transform: uppercase;">Urgency</label>
-            <select name="delay" onchange="this.form.submit()" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--clr-border); background: var(--clr-bg-main);">
+            <label for="search-input" style="display: block; font-size: 11px; font-weight: 700; color: var(--clr-text-faint); margin-bottom: 6px; text-transform: uppercase;">Urgency</label>
+            <select id="delay-select" name="delay" onchange="this.form.submit()" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--clr-border); background: var(--clr-bg-main);">
                 <option value="">Any</option>
                 <option value="delayed" {% if delay_filter == 'delayed' %}selected{% endif %}>🔴 Overdue</option>
                 <option value="at_risk" {% if delay_filter == 'at_risk' %}selected{% endif %}>🟠 At Risk</option>
@@ -94,7 +94,7 @@
                             {{ task.title }}
                         </a>
                         {% if user.is_manager %}
-                        <span style="font-size: 11px; color: var(--clr-text-faint);">Assigned to: <strong>{{ task.user.username }}</strong></span>
+                        <span style="font-size: 11px; color: var(--clr-text-faint);">Assigned to: <strong>{{ task.assigned_to.username }}</strong></span>
                         {% endif %}
                         {% if task.status == 'REJECTED' %}
                             <span style="color: var(--clr-danger); font-size: 11px; display: block; margin-top: 2px;" title="{{ task.rejected_reason }}">
@@ -128,18 +128,19 @@
 
                 <td style="text-align: right;">
                     <div style="display: flex; gap: 4px; justify-content: flex-end;">
-                        {% if user == task.user %}
+                        {% if user == task.assigned_to %}
                             {% if task.status == 'PENDING' %}
-                                <form method="post" action="{% url 'start_task' task.id %}" style="margin:0;">{% csrf_token %}<button type="submit" class="btn btn-outline btn-sm">▶ Start</button></form>
+                                <button type="button" class="btn btn-outline btn-sm"
+                                        onclick="tlAction('{% url 'start_task' task.id %}', this, 'start')">▶ Start</button>
                             {% elif task.status == 'IN_PROGRESS' or task.status == 'REJECTED' %}
-                                <form method="post" action="{% url 'submit_task' task.id %}" style="margin:0;">{% csrf_token %}<button type="submit" class="btn btn-primary btn-sm">Submit</button></form>
+                                <button type="button" class="btn btn-primary btn-sm"
+                                        onclick="tlAction('{% url 'submit_task' task.id %}', this, 'submit')">Submit</button>
                             {% endif %}
                         {% endif %}
-                        
-                        {% if user.is_manager and task.status == 'READY_FOR_REVIEW' and user != task.user %}
-                            <form method="post" action="{% url 'approve_task' task.id %}" style="margin:0;">{% csrf_token %}<button type="submit" class="btn btn-success btn-sm">✓ Approve</button></form>
+                        {% if user.is_manager and task.status == 'READY_FOR_REVIEW' and user != task.assigned_to %}
+                            <button type="button" class="btn btn-success btn-sm"
+                                    onclick="tlAction('{% url 'approve_task' task.id %}', this, 'approve')">✓ Approve</button>
                         {% endif %}
-                        
                         <a href="{% url 'task_detail' task.id %}" class="btn btn-ghost btn-sm">View</a>
                     </div>
                 </td>
@@ -149,7 +150,6 @@
     </table>
 </div>
 
-<!-- Pagination -->
 {% if page_obj.has_other_pages %}
 <div class="pagination-bar">
     <span style="font-size: 13px; color: var(--clr-text-faint);">Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} items</span>
@@ -172,22 +172,42 @@
 </div>
 {% endif %}
 
-<style>
-    .tab-pill {
-        padding: 8px 18px; background: #fff; border: 1px solid var(--clr-border); border-radius: 20px;
-        font-size: 13px; font-weight: 600; color: var(--clr-text-faint); cursor: pointer; white-space: nowrap; transition: all 0.2s;
-    }
-    .tab-pill:hover { border-color: var(--clr-primary); color: var(--clr-primary); background: rgba(59, 130, 246, 0.05); }
-    .tab-pill.active { background: var(--clr-primary); color: #fff; border-color: var(--clr-primary); box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2); }
-    .task-link:hover { color: var(--clr-primary) !important; text-decoration: underline !important; }
-    .row-rejected { background: rgba(239, 68, 68, 0.015); }
-</style>
-
 <script>
-    function setStatusFilter(status) {
-        document.getElementById('status-input').value = status;
-        document.getElementById('filter-form').submit();
-    }
+function setStatusFilter(status) {
+    document.getElementById('status-input').value = status;
+    document.getElementById('filter-form').submit();
+}
 
+function getCsrfToken() {
+    const m = document.cookie.split(';').find(c => c.trim().startsWith('csrftoken='));
+    return m ? decodeURIComponent(m.split('=')[1]) : '';
+}
+
+function tlAction(url, btn, actionType) {
+    btn.disabled = true;
+    const orig = btn.textContent;
+    btn.textContent = '…';
+    fetch(url, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCsrfToken(), 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: '',
+        redirect: 'manual',
+    }).then(res => {
+        if (res.ok || res.type === 'opaqueredirect' || res.status === 0) {
+            if (actionType === 'approve') {
+                const row = btn.closest('tr');
+                if (row) { row.style.transition = 'opacity 0.3s'; row.style.opacity = '0'; setTimeout(() => row.remove(), 300); }
+            } else {
+                window.location.reload();
+            }
+            const msgs = { start: 'Task started.', submit: 'Task submitted for review.', approve: 'Task approved.' };
+            if (typeof showToast === 'function') showToast(msgs[actionType] || 'Done.', 'success');
+        } else {
+            btn.disabled = false;
+            btn.textContent = orig;
+            if (typeof showToast === 'function') showToast('Action failed. Please try again.', 'error');
+        }
+    }).catch(() => { btn.disabled = false; btn.textContent = orig; });
+}
 </script>
 {% endblock %}

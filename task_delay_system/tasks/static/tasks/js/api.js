@@ -18,35 +18,41 @@ export function resetIdemKey(taskId, action) {
   _idemKeys.delete(`${taskId}:${action}`);
 }
 
-function getToken()     { return localStorage.getItem('access_token'); }
-function getRefresh()   { return localStorage.getItem('refresh_token'); }
-function setTokens(a,r) { localStorage.setItem('access_token', a); if (r) localStorage.setItem('refresh_token', r); }
-
-async function refreshToken() {
-  const r = await fetch(`${BASE}/token/refresh/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh: getRefresh() }),
-  });
-  if (r.ok) { const d = await r.json(); setTokens(d.access, null); return true; }
-  return false;
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }
 
 async function request(method, path, body = null, idemKey = null, retry = true) {
-  const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` };
+  const headers = { 'Content-Type': 'application/json' };
+  
   if (idemKey) headers['Idempotency-Key'] = idemKey;
+  
+  // Add CSRF token for state-changing requests
+  if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method.toUpperCase())) {
+      headers['X-CSRFToken'] = getCookie('csrftoken');
+  }
+
   const opts = { method, headers };
   if (body) opts.body = JSON.stringify(body);
 
   const res = await fetch(`${BASE}${path}`, opts);
 
-  // Auto-refresh on 401, retry once
-  if (res.status === 401 && retry) {
-    const ok = await refreshToken();
-    if (ok) return request(method, path, body, idemKey, false);
+  // If unauthorized via session cookie, redirect to login
+  if ((res.status === 401 || res.status === 403) && retry) {
     bus.emit('auth_expired', {});
     window.location.href = '/login/';
-    return { status: 401, data: {} };
+    return { status: res.status, data: {} };
   }
 
   const data = await res.json().catch(() => ({}));

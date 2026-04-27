@@ -41,7 +41,7 @@ def send_manager_daily_digest():
     body_lines = [f"Hello Manager,\n\nYou have {issues.count()} tasks that need attention:\n"]
     for task in issues:
         status_note = "OVERDUE" if task.deadline < today else "DUE SOON"
-        body_lines.append(f"- [{status_note}] {task.title} (Assigned to {task.user.username}) - Due: {task.deadline}")
+        body_lines.append(f"- [{status_note}] {task.title} (Assigned to {task.assigned_to.username if task.assigned_to else 'Unassigned'}) - Due: {task.deadline}")
     
     body_lines.append("\nPlease log into the system to review them.")
     message = "\n".join(body_lines)
@@ -68,16 +68,16 @@ def send_employee_reminders():
     imminent_tasks = Task.objects.exclude(status='APPROVED').filter(
         deadline__gte=today,
         deadline__lte=tomorrow
-    ).select_related('user')
+    ).select_related('assigned_to')
 
     count = 0
     for task in imminent_tasks:
-        if task.user.email:
+        if task.assigned_to and task.assigned_to.email:
             send_mail(
                 f"Action Required: Task '{task.title}' is due soon!",
-                f"Hello {task.user.first_name or task.user.username},\n\nThis is a reminder that your task '{task.title}' is due on {task.deadline}.\nPlease complete it or submit it for review.",
+                f"Hello {task.assigned_to.first_name or task.assigned_to.username},\n\nThis is a reminder that your task '{task.title}' is due on {task.deadline}.\nPlease complete it or submit it for review.",
                 settings.DEFAULT_FROM_EMAIL,
-                [task.user.email],
+                [task.assigned_to.email],
                 fail_silently=True,
             )
             count += 1

@@ -16,7 +16,7 @@ from .services.task_service import TaskService, TaskStateError
 
 def _invalidate_dashboard_cache(task):
     """Clear cached dashboard stats for the task owner (and all managers)."""
-    cache.delete(f"dashboard_stats_user_{task.user.id}")
+    cache.delete(f"dashboard_stats_user_{task.assigned_to.id}")
     # Managers see all tasks — invalidate their caches too
     from django.contrib.auth.models import User, Group
     from .models import ROLE_MANAGER
@@ -32,12 +32,12 @@ def _invalidate_dashboard_cache(task):
 def task_list(request):
     """Display tasks with filtering options and pagination. Managers see all, Employees see own."""
     user = request.user
-    tasks = Task.objects.with_risk_score().select_related('user')
+    tasks = Task.objects.with_risk_score().select_related('assigned_to')
     
     if user.is_manager:
         tasks = tasks.all()
     else:
-        tasks = tasks.filter(user=user)
+        tasks = tasks.filter(assigned_to=user)
     
     today = timezone.now().date()
 
@@ -56,7 +56,7 @@ def task_list(request):
         tasks = tasks.filter(risk_score__gte=70).exclude(status='APPROVED')
 
     if owner_username and user.is_manager:
-        tasks = tasks.filter(user__username=owner_username)
+        tasks = tasks.filter(assigned_to__username=owner_username)
     
     if query:
         tasks = tasks.filter(Q(title__icontains=query) | Q(description__icontains=query))
@@ -102,7 +102,7 @@ def profile_view(request, username=None):
     else:
         target_user = request.user
 
-    user_tasks = Task.objects.filter(user=target_user)
+    user_tasks = Task.objects.filter(assigned_to=target_user)
     total_tasks = user_tasks.count()
     completed_tasks = user_tasks.filter(status='APPROVED').count()
     
@@ -137,7 +137,8 @@ def create_task(request):
         form = TaskForm(request.POST)
         if form.is_valid():
             task = form.save(commit=False)
-            task.user = request.user
+            task.assigned_to = request.user
+            task.created_by = request.user
             task.save()
             _invalidate_dashboard_cache(task)
             messages.success(request, f'Task "{task.title}" created successfully!')
@@ -152,7 +153,7 @@ def create_task(request):
 @login_required
 def update_task(request, task_id):
     """Update an existing task."""
-    task = get_object_or_404(Task, id=task_id, user=request.user)
+    task = get_object_or_404(Task, id=task_id, assigned_to=request.user)
 
     if task.status in ['APPROVED', 'READY_FOR_REVIEW']:
         messages.error(request, 'Approved or Under-Review tasks cannot be edited.')
@@ -180,7 +181,7 @@ def update_task(request, task_id):
 @login_required
 def delete_task(request, task_id):
     """Delete a task (confirmation required via POST)."""
-    task = get_object_or_404(Task, id=task_id, user=request.user)
+    task = get_object_or_404(Task, id=task_id, assigned_to=request.user)
 
     if task.status in ['APPROVED', 'READY_FOR_REVIEW']:
         messages.error(request, 'Approved or Under-Review tasks cannot be deleted.')
@@ -284,9 +285,9 @@ def task_detail(request, task_id):
     """Read-only task detail view. Employees see own tasks, managers see all."""
     user = request.user
     if user.is_manager or user.is_superuser:
-        task = get_object_or_404(Task.objects.with_risk_score().select_related('user', 'approved_by'), id=task_id)
+        task = get_object_or_404(Task.objects.with_risk_score().select_related('assigned_to', 'approved_by'), id=task_id)
     else:
-        task = get_object_or_404(Task.objects.with_risk_score().select_related('user', 'approved_by'), id=task_id, user=user)
+        task = get_object_or_404(Task.objects.with_risk_score().select_related('assigned_to', 'approved_by'), id=task_id, assigned_to=user)
     return render(request, 'tasks/task_detail.html', {'task': task})
 
 
@@ -300,7 +301,7 @@ def review_queue(request):
 
     tasks = (Task.objects.with_risk_score()
              .filter(status='READY_FOR_REVIEW')
-             .select_related('user')
+             .select_related('assigned_to')
              .order_by('deadline', '-priority'))
 
     # Pagination
@@ -324,11 +325,11 @@ def dashboard(request):
     context = cache.get(cache_key)
 
     if not context:
-        base_tasks = Task.objects.with_risk_score().select_related('user')
+        base_tasks = Task.objects.with_risk_score().select_related('assigned_to')
         if user.is_manager:
             tasks = base_tasks.all()
         else:
-            tasks = base_tasks.filter(user=user)
+            tasks = base_tasks.filter(assigned_to=user)
             
         today = timezone.now().date()
         week_ago = today - timedelta(days=7)
@@ -385,9 +386,9 @@ def dashboard(request):
             context['review_count'] = review_queue.count()
             
             # 5. Manager: Employee Workload Breakdown
-            workload = User.objects.filter(tasks__status__in=['PENDING', 'IN_PROGRESS', 'READY_FOR_REVIEW']).distinct().annotate(
-                active_count=Count('tasks', filter=Q(tasks__status__in=['PENDING', 'IN_PROGRESS'])),
-                overdue_count=Count('tasks', filter=Q(tasks__deadline__lt=today, tasks__status__in=['PENDING', 'IN_PROGRESS']))
+            workload = User.objects.filter(assigned_tasks__status__in=['PENDING', 'IN_PROGRESS', 'READY_FOR_REVIEW']).distinct().annotate(
+                active_count=Count('assigned_tasks', filter=Q(assigned_tasks__status__in=['PENDING', 'IN_PROGRESS'])),
+                overdue_count=Count('assigned_tasks', filter=Q(assigned_tasks__deadline__lt=today, assigned_tasks__status__in=['PENDING', 'IN_PROGRESS']))
             ).values('username', 'active_count', 'overdue_count').order_by('-active_count')
             
             # Determine max workload for capacity scaling
@@ -411,16 +412,16 @@ def dashboard(request):
             # 7. Employee: Completed last 7 days
             context['completed_7d'] = tasks.filter(status='APPROVED', completed_at__gte=week_ago).count()
             
-        context['recent_tasks'] = list(active_tasks.filter(user=user).order_by('-created_at')[:5]) if not user.is_manager else list(active_tasks.order_by('-created_at')[:5])
+        context['recent_tasks'] = list(active_tasks.filter(assigned_to=user).order_by('-created_at')[:5]) if not user.is_manager else list(active_tasks.order_by('-created_at')[:5])
         
         cache.set(cache_key, context, timeout=300)
 
     return render(request, 'tasks/dashboard.html', context)
 
 @login_required
-@user_passes_test(lambda u: u.is_superuser)
+@user_passes_test(lambda u: u.is_superuser or u.is_manager)
 def department_list(request):
-    """List all departments (Superuser only)."""
+    """List all departments (Manager/Superuser)."""
     departments = Department.objects.annotate(employee_count=Count('employees'))
     return render(request, 'tasks/department_list.html', {'departments': departments})
 
@@ -473,8 +474,8 @@ def reports_view(request):
 
     # Department breakdown
     dept_metrics = Department.objects.annotate(
-        approvals=Count('employees__user__tasks', filter=Q(employees__user__tasks__status='APPROVED')),
-        rejections=Count('employees__user__tasks', filter=Q(employees__user__tasks__status='REJECTED'))
+        approvals=Count('employees__user__assigned_tasks', filter=Q(employees__user__assigned_tasks__status='APPROVED')),
+        rejections=Count('employees__user__assigned_tasks', filter=Q(employees__user__assigned_tasks__status='REJECTED'))
     )
 
     context = {

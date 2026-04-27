@@ -24,24 +24,10 @@ from rest_framework_simplejwt.views import (
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from tasks.api_views import TaskViewSet, DashboardMetricsView, ProfileView
 
-from django.http import HttpResponse
-from django.contrib.auth.models import User
-import logging
-
-def create_temp_superuser(request):
-    try:
-        if not User.objects.filter(username='presentation_admin').exists():
-            User.objects.create_superuser('presentation_admin', 'admin@example.com', 'Presentation123!')
-            return HttpResponse("Superuser 'presentation_admin' created successfully! Password is: Presentation123!")
-        return HttpResponse("Superuser 'presentation_admin' already exists. Password is: Presentation123!")
-    except Exception as e:
-        return HttpResponse(f"Error creating superuser: {str(e)}")
-
 router = DefaultRouter()
 router.register('tasks', TaskViewSet, basename='task')
 
 urlpatterns = [
-    path('setup-admin/', create_temp_superuser),
     path('admin/', admin.site.urls),
     path('', include('tasks.urls')),
     

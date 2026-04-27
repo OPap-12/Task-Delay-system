@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="{% static 'tasks/css/modern_style.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
-<body class="{% if not user.is_authenticated %}auth-page{% endif %}">
+<body class="{% if not user.is_authenticated %}auth-page{% endif %}" {% if user.is_authenticated %}data-user-id="{{ user.id }}"{% endif %}>
 
     <!-- ══════ SIDEBAR ══════ -->
     {% if user.is_authenticated %}
@@ -42,7 +42,7 @@
             <a href="{% url 'reports_view' %}" class="nav-item {% if request.resolver_match.url_name == 'reports_view' %}active{% endif %}" id="nav-reports">
                 <span class="icon">📈</span> Reports
             </a>
-            {% if user.is_superuser %}
+            {% if user.is_superuser or user.is_manager %}
             <a href="{% url 'department_list' %}" class="nav-item {% if 'department' in request.resolver_match.url_name or 'assign_employee' in request.resolver_match.url_name %}active{% endif %}" id="nav-departments">
                 <span class="icon">🏢</span> Departments
             </a>
@@ -99,22 +99,22 @@
 
             <div class="actions">
                 <!-- Notification Bell -->
-                <div class="notification-bell empty" id="bell-container" onclick="toggleNotifications()" role="button" aria-label="Notifications">
+                <button type="button" class="notification-bell empty" id="bell-container" aria-label="Notifications">
                     🔔
                     <span class="bell-badge" id="notif-badge" style="display: none;">0</span>
 
                     <div class="notification-dropdown" id="notif-dropdown" onclick="event.stopPropagation()">
                         <div class="notif-header">Notifications</div>
-                        <div class="notif-body" id="notif-list">
-                            <div class="notif-item" style="text-align:center; color:var(--clr-text-faint); padding:24px 16px;">
+                        <ul class="notif-body" id="notif-list" style="list-style: none; margin: 0; padding: 0;">
+                            <li class="notif-item" style="text-align:center; color:var(--clr-text-faint); padding:24px 16px;">
                                 No new notifications
-                            </div>
-                        </div>
+                            </li>
+                        </ul>
                     </div>
-                </div>
+                </button>
 
                 <!-- Sign Out (with confirmation) -->
-                <button type="button" class="btn btn-outline btn-sm" id="btn-signout" onclick="document.getElementById('logout-modal').style.display='flex'" style="color:var(--clr-text-muted); display:flex; align-items:center; gap:6px;">
+                <button type="button" class="btn btn-outline btn-sm" id="btn-signout" onclick="window.openLogoutModal()" style="color:var(--clr-text-muted); display:flex; align-items:center; gap:6px;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                     Sign Out
                 </button>
@@ -183,201 +183,6 @@
 
     {% block extra_js %}{% endblock %}
 
-    <script>
-        function openRejectModal(url) {
-            const modal = document.getElementById('reject-modal');
-            const form = document.getElementById('reject-form');
-            form.action = url;
-            form.querySelector('textarea').value = '';
-            modal.style.display = 'flex';
-            setTimeout(() => form.querySelector('textarea').focus(), 50);
-        }
-    </script>
-
-    <script>
-        /* ══ Logout Modal — close on backdrop click or Escape key ══ */
-        (function() {
-            var logoutModal = document.getElementById('logout-modal');
-            if (!logoutModal) return;
-            logoutModal.addEventListener('click', function(e) {
-                if (e.target === logoutModal) logoutModal.style.display = 'none';
-            });
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && logoutModal.style.display === 'flex') {
-                    logoutModal.style.display = 'none';
-                }
-            });
-        })();
-    </script>
-
-    {% if user.is_authenticated %}
-    <script>
-        /* ══ WebSocket Notifications ══ */
-        const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-        const wsUrl = protocol + window.location.host + '/ws/notifications/';
-        let notificationSocket;
-        function connectWebSocket() {
-            notificationSocket = new WebSocket(wsUrl);
-
-            notificationSocket.onopen = function() {
-                console.log('✅ TaskFlow WebSocket Live!');
-            };
-
-            notificationSocket.onmessage = function(e) {
-                const data = JSON.parse(e.data);
-                showToast(data.message, data.type);
-                addDropdownAlert(data.title, data.message, data.type);
-                updateBell();
-            };
-
-            notificationSocket.onclose = function() {
-                console.warn('WebSocket disconnected. Reconnecting in 5s...');
-                setTimeout(connectWebSocket, 5000);
-            };
-        }
-        connectWebSocket();
-
-        /* ══ Toast System ══ */
-        function showToast(message, type) {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            const iconContainer = document.createElement('span');
-            iconContainer.className = 'toast-icon';
-            iconContainer.textContent = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
-            
-            toast.className = 'toast ' + (type || '') + ' show';
-            toast.appendChild(iconContainer);
-            toast.appendChild(document.createTextNode(' ' + message));
-            container.appendChild(toast);
-            setTimeout(function() {
-                toast.classList.remove('show');
-                toast.classList.add('hide');
-                setTimeout(function() { toast.remove(); }, 300);
-            }, 5000);
-        }
-
-        /* ══ Bell State ══ */
-        let notifCount = 0;
-        function updateBell() {
-            const badge = document.getElementById('notif-badge');
-            const bell = document.getElementById('bell-container');
-            notifCount++;
-            badge.innerText = notifCount > 9 ? '9+' : notifCount;
-            badge.style.display = 'flex';
-            badge.classList.add('pulse');
-            setTimeout(function() { badge.classList.remove('pulse'); }, 1200);
-            bell.classList.remove('empty');
-            bell.classList.add('has-notifs', 'ringing');
-            setTimeout(function() { bell.classList.remove('ringing'); }, 500);
-        }
-
-        function addDropdownAlert(title, message, type) {
-            const list = document.getElementById('notif-list');
-            if (notifCount === 0) list.innerHTML = '';
-            const item = document.createElement('div');
-            item.className = 'notif-item ' + (type || '');
-            const titleEl = document.createElement('strong');
-            titleEl.textContent = title;
-            item.appendChild(titleEl);
-            item.appendChild(document.createTextNode(' ' + message));
-            list.prepend(item);
-        }
-
-        function toggleNotifications() {
-            const dropdown = document.getElementById('notif-dropdown');
-            const bell = document.getElementById('bell-container');
-            dropdown.classList.toggle('active');
-            if (dropdown.classList.contains('active')) {
-                notifCount = 0;
-                document.getElementById('notif-badge').style.display = 'none';
-                bell.classList.remove('has-notifs');
-                bell.classList.add('empty');
-            }
-        }
-
-        /* ══ Global Behaviors ══ */
-        // Close dropdown on outside click
-        document.addEventListener('click', function(e) {
-            var bell = document.getElementById('bell-container');
-            if (bell && !bell.contains(e.target)) {
-                document.getElementById('notif-dropdown').classList.remove('active');
-            }
-        });
-
-        // Auto-dismiss initial toasts
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.toast.show').forEach(function(t) {
-                setTimeout(function() {
-                    t.classList.remove('show');
-                    t.classList.add('hide');
-                    setTimeout(function() { t.remove(); }, 300);
-                }, 4000);
-            });
-        });
-
-        // Close sidebar on mobile when clicking main area
-        document.querySelector('.main-area').addEventListener('click', function() {
-            document.getElementById('sidebar').classList.remove('open');
-        });
-
-        /* ══ Phase 1: Global Form Guards & Recovery ══ */
-        document.addEventListener('submit', function (e) {
-            const form = e.target;
-            
-            // 1. Double Submit Source Guard
-            if (form.dataset.submitted === 'true') {
-                e.preventDefault();
-                return;
-            }
-            
-            // If another script prevented submission (e.g. invalid form), don't trigger feedback
-            if (e.defaultPrevented) return;
-
-            const btn = form.querySelector('button[type="submit"]');
-            if (btn) {
-                // Short timeout to check if submission was successful or blocked by validation
-                setTimeout(function() {
-                    // Check again if submitted (standard forms will have navigated away, 
-                    // but we apply feedback for perceived performance during navigation)
-                    if (e.defaultPrevented) return;
-                    
-                    form.dataset.submitted = 'true';
-                    // 2. Disable Button & Visual Feedback
-                    btn.disabled = true;
-                    btn.innerHTML = '<span class="spinner-small"></span> Processing...';
-                    
-                    // 3. Instant Row Feedback
-                    const row = form.closest('tr');
-                    if (row) row.classList.add('submitting-row');
-                }, 10);
-            }
-        });
-
-        // 4. Failure Recovery (Browser Back/Reload)
-        window.addEventListener('pageshow', function (event) {
-            // Re-enable buttons and clear flags if page is shown from cache or navigation
-            document.querySelectorAll('button[disabled]').forEach(btn => {
-                btn.disabled = false;
-            });
-            document.querySelectorAll('form[data-submitted]').forEach(form => {
-                delete form.dataset.submitted;
-            });
-            document.querySelectorAll('.submitting-row').forEach(row => {
-                row.classList.remove('submitting-row');
-            });
-        });
-
-        /* ══ Phase 2: Top Progress Bar Trigger ══ */
-        document.querySelectorAll('a[href]').forEach(link => {
-            link.addEventListener('click', function (e) {
-                // Ignore hash links, blank targets, and non-navigational clicks
-                if (this.target === '_blank' || this.getAttribute('href').startsWith('#')) return;
-                
-                // Add loading class to trigger the width transition
-                document.body.classList.add('loading');
-            });
-        });
-    </script>
-    {% endif %}
+        <script type="module" src="{% static 'tasks/js/main.js' %}"></script>
 </body>
 </html>

@@ -338,17 +338,26 @@ a:hover { color: var(--clr-primary-hover); }
 .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .btn-primary { background: var(--clr-primary); color: #fff; }
-.btn-primary:hover:not(:disabled) { background: var(--clr-primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-primary:hover:not(:disabled) { background: var(--clr-primary-hover); color: #fff; transform: translateY(-1px); box-shadow: var(--shadow-md); }
 
 .btn-secondary { background: var(--clr-bg-main); color: var(--clr-text-main); border: 1px solid var(--clr-border); }
-.btn-secondary:hover:not(:disabled) { background: var(--clr-border); }
+.btn-secondary:hover:not(:disabled) { background: var(--clr-border); color: var(--clr-text-main); }
+
+.btn-success { background: var(--clr-success); color: #fff; }
+.btn-success:hover:not(:disabled) { background: #047857; color: #fff; transform: translateY(-1px); box-shadow: var(--shadow-md); }
 
 .btn-danger { background: var(--clr-danger); color: #fff; }
-.btn-danger:hover:not(:disabled) { background: #B91C1C; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-danger:hover:not(:disabled) { background: #B91C1C; color: #fff; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+
+.btn-outline { background: transparent; color: var(--clr-primary); border: 1.5px solid var(--clr-primary); }
+.btn-outline:hover:not(:disabled) { background: var(--clr-primary-soft); color: var(--clr-primary); }
 
 .btn-sm { padding: 6px 12px; font-size: 13px; }
 .btn-ghost { background: transparent; color: var(--clr-primary); }
-.btn-ghost:hover { background: var(--clr-primary-soft); }
+.btn-ghost:hover { background: var(--clr-primary-soft); color: var(--clr-primary); }
+
+/* Prevent global a:hover from overriding button text colors */
+a.btn:hover { text-decoration: none; }
 
 /* ══════════════════════════════════════════════
    FORMS
@@ -493,4 +502,69 @@ body.auth-page .content-wrapper { display: flex !important; align-items: center;
 
 @media (max-width: 480px) {
     .stats-grid { grid-template-columns: 1fr !important; }
+}
+
+/* --- INJECTED FIXES --- */
+
+/* Form validation UX */
+.form-label.required::after, label.required::after {
+    content: ' *';
+    color: var(--clr-danger);
+}
+
+/* Modals & Focus Trap */
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 3px solid var(--clr-primary-soft);
+    outline-offset: 2px;
+}
+
+/* From task_list.html */
+.tab-pill {
+    padding: 8px 18px; background: #fff; border: 1px solid var(--clr-border); border-radius: 20px;
+    font-size: 13px; font-weight: 600; color: var(--clr-text-faint); cursor: pointer; white-space: nowrap; transition: all 0.2s;
+}
+.tab-pill:hover { border-color: var(--clr-primary); color: var(--clr-primary); background: rgba(59, 130, 246, 0.05); }
+.tab-pill.active { background: var(--clr-primary); color: #fff; border-color: var(--clr-primary); box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2); }
+.task-link:hover { color: var(--clr-primary) !important; text-decoration: underline !important; }
+.row-rejected { background: rgba(239, 68, 68, 0.015); }
+
+/* From dashboard.html */
+.clickable-card { transition: transform 0.2s, box-shadow 0.2s; }
+.clickable-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.border-danger { border-left: 4px solid var(--clr-danger) !important; }
+.border-warning { border-left: 4px solid var(--clr-warning) !important; }
+.attention-card { background: #fff; transition: background 0.2s; }
+.attention-card:hover { background: var(--clr-bg-main); }
+.small-table th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 20px !important; }
+.small-table td { padding: 12px 20px !important; font-size: 13px; }
+.color-danger { color: var(--clr-danger); font-weight: 700; }
+
+/* From task_detail.html */
+.step { flex: 1; text-align: center; z-index: 2; position: relative; }
+.step-circle {
+    width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--clr-border);
+    background: #fff; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: var(--clr-text-faint); transition: all 0.3s;
+}
+.step-circle.active { background: var(--clr-primary); border-color: var(--clr-primary); color: #fff; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); }
+.step-circle.success { background: #10B981; border-color: #10B981; color: #fff; }
+.step-circle.danger { background: var(--clr-danger); border-color: var(--clr-danger); color: #fff; }
+.step-circle.upcoming { background: var(--clr-bg-main); color: var(--clr-text-faint); border-style: dashed; }
+
+.step-label { font-size: 11px; font-weight: 600; color: var(--clr-text-faint); text-transform: uppercase; letter-spacing: 0.02em; }
+.step-label.active { color: var(--clr-text-main); }
+
+.step-line { flex: 2; height: 2px; background: var(--clr-border); margin-top: -24px; z-index: 1; }
+.step-line.success { background: #10B981; }
+.step-line.active { background: var(--clr-primary); }
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Auto-detect required fields if label wraps input or precedes it */
+.form-group:has(input[required], select[required], textarea[required]) .form-label::after {
+    content: ' *';
+    color: var(--clr-danger);
 }

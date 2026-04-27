@@ -18,12 +18,23 @@ function humanizeError(raw = '') {
   return FSM_ERRORS.default;
 }
 
-export function showToast(msg, type = 'success') {
-  const el = document.getElementById('toast');
-  if (!el) return;
-  el.textContent = msg;
-  el.className = `toast toast--${type} toast--visible`;
-  setTimeout(() => el.classList.remove('toast--visible'), 4500);
+export function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    const iconContainer = document.createElement('span');
+    iconContainer.className = 'toast-icon';
+    iconContainer.textContent = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+    
+    toast.className = 'toast ' + (type || '') + ' show';
+    toast.appendChild(iconContainer);
+    toast.appendChild(document.createTextNode(' ' + message));
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        toast.classList.add('hide');
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
 }
 
 function setLoading(btn, loading) {

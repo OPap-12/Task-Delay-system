@@ -19,7 +19,8 @@ class TaskModelTest(TestCase):
     def _create_task(self, due_offset_days=5, completed=False, priority='medium'):
         """Helper to create a task with a due date offset from today."""
         task = Task(
-            user=self.user,
+            assigned_to=self.user,
+            created_by=self.user,
             title='Test Task',
             description='Test description',
             deadline=timezone.now().date() + timedelta(days=due_offset_days),
@@ -123,7 +124,8 @@ class TaskViewTest(TestCase):
             username='otheruser', password='otherpass123'
         )
         self.task = Task.objects.create(
-            user=self.user,
+            assigned_to=self.user,
+            created_by=self.user,
             title='User Task',
             deadline=timezone.now().date() + timedelta(days=5),
             priority='medium',
@@ -166,7 +168,7 @@ class TaskViewTest(TestCase):
             'priority': 'high',
         })
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(Task.objects.filter(title='New Task', user=self.user).exists())
+        self.assertTrue(Task.objects.filter(title='New Task', assigned_to=self.user).exists())
 
     def test_create_task_post_past_date(self):
         """A task with a past due date is rejected."""
@@ -197,18 +199,20 @@ class TaskViewTest(TestCase):
 
     def test_manager_approves_task(self):
         """Manager can approve task."""
-        self.client.login(username='testuser', password='testpass123')
-        self.assertFalse(self.task.is_completed)
-        
-        # Managers can approve
+        # Create a SEPARATE manager user — service blocks self-approval
         from django.contrib.auth.models import Group
-        from .models import ROLE_MANAGER
+        from .models import ROLE_MANAGER, ROLE_EMPLOYEE
         manager_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
-        self.user.groups.add(manager_group)
-        
+        employee_group, _ = Group.objects.get_or_create(name=ROLE_EMPLOYEE)
+
+        manager = User.objects.create_user(username='mgr_test', password='mgrpass123')
+        manager.groups.add(manager_group)
+        self.user.groups.add(employee_group)
+
         self.task.status = 'READY_FOR_REVIEW'
         self.task.save()
-        
+
+        self.client.login(username='mgr_test', password='mgrpass123')
         self.client.post(reverse('approve_task', args=[self.task.id]))
         self.task.refresh_from_db()
         self.assertEqual(self.task.status, 'APPROVED')

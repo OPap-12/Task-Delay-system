@@ -51,7 +51,7 @@
         
         <!-- Needs Attention Section -->
         <div class="section-block" style="margin: 0;">
-            <div class="section-title" style="display: flex; align-items: center; gap: 8px;">
+            <h2 class="section-title" style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 20px;">🚨</span> Needs Your Attention
             </div>
             {% if needs_attention %}
@@ -207,16 +207,6 @@
     </div>
 </div>
 
-<style>
-    .clickable-card { transition: transform 0.2s, box-shadow 0.2s; }
-    .clickable-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
-    .border-danger { border-left: 4px solid var(--clr-danger) !important; }
-    .border-warning { border-left: 4px solid var(--clr-warning) !important; }
-    .attention-card { background: #fff; transition: background 0.2s; }
-    .attention-card:hover { background: var(--clr-bg-main); }
-    .small-table th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 20px !important; }
-    .small-table td { padding: 12px 20px !important; font-size: 13px; }
-    .color-danger { color: var(--clr-danger); font-weight: 700; }
-</style>
+
 
 {% endblock %}
